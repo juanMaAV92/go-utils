@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/juanMaAV92/go-utils/headers"
 	"github.com/juanMaAV92/go-utils/tracing"
 	"github.com/labstack/echo/v4"
 	"go.opentelemetry.io/otel"
@@ -51,12 +52,12 @@ func extractTraceIDFromContext(ctx context.Context) string {
 }
 
 func extractTraceIDFromHeader(header http.Header) string {
-	return header.Get("X-Trace-Id")
+	return header.Get(headers.TraceID)
 }
 
 func propagateTraceID(c echo.Context, traceID string) {
 	c.Set(tracing.ContextTraceIDKey, traceID)
-	c.Response().Header().Set("X-Trace-Id", traceID)
+	c.Response().Header().Set(headers.TraceID, traceID)
 }
 
 func generateUUID() string {
