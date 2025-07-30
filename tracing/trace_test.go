@@ -58,14 +58,14 @@ func Test_GetTraceID(t *testing.T) {
 		{
 			name: "Contexto con trace ID",
 			setup: func(c echo.Context) {
-				c.Set(contextTraceIDKey, "test-trace-id")
+				c.Set(ContextTraceIDKey, "test-trace-id")
 			},
 			expected: "test-trace-id",
 		},
 		{
 			name: "Contexto con valor incorrecto",
 			setup: func(c echo.Context) {
-				c.Set(contextTraceIDKey, 123)
+				c.Set(ContextTraceIDKey, 123)
 			},
 			expected: "",
 		},

@@ -10,6 +10,12 @@ Utilities for working with environment variables, pointers, paths, and Echo serv
 - [Available Packages](#available-packages)
     - [env](#env)
     - [log](#log)
+    - [middleware](#middleware)
+        - [TraceId](#traceid)
+        - [Tracing](#tracing)
+        - [Logging](#logging)
+    - [Path](#path)
+    - [Pointers](#pointers)
     - [server](#server)
     - [Testhelpers](#testhelpers)
     - [Tracing](#tracing)
@@ -36,6 +42,18 @@ Helpers for structured logging.
 - `Fields(fields map[string]interface{}) Opts`: Create options from a map of fields.
 - `Field(key string, value interface{}) Opts`: Create options for a single field.
 - `AddField(key string, value interface{})`: Add a field to an existing Opts.
+
+### middleware
+Common middleware functions for Echo.
+- `TraceId() echo.MiddlewareFunc`: Middleware to add a trace ID to the context.
+- `Tracing() echo.MiddlewareFunc`: Middleware to start and stop tracing for requests.
+- `Logging() echo.MiddlewareFunc`: Middleware to log requests and responses.
+
+### Path
+Path manipulation utilities.
+
+### Pointers
+Pointer utilities for working with values.
 
 ### server
 Configuration and lifecycle management for Echo servers.

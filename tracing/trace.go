@@ -6,12 +6,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const contextTraceIDKey = "trace_id"
+const ContextTraceIDKey = "trace_id"
 
 type TraceIDKey struct{}
 
 func GetTraceIDFromEchoContext(c echo.Context) string {
-	traceID, ok := c.Get(contextTraceIDKey).(string)
+	traceID, ok := c.Get(ContextTraceIDKey).(string)
 	if !ok {
 		return ""
 	}
