@@ -4,10 +4,15 @@
 
 Utilities for working with environment variables, pointers, paths, and Echo server lifecycle in Go.
 
-## 📋 Tabla de Contenido
+## 📋 Content table
 
 - [Installation](#installation)
 - [Available Packages](#available-packages)
+    - [env](#env)
+    - [log](#log)
+    - [server](#server)
+    - [Testhelpers](#testhelpers)
+    - [Tracing](#tracing)
 - [Contributing](#contributing)
 
 
@@ -37,6 +42,9 @@ Configuration and lifecycle management for Echo servers.
 - `New(config *BasicConfig) (*Server, error)`: Creates a new Echo server.
 - `Run() <-chan error`: Starts the server and handles graceful shutdown.
 - `GetBasicServerConfig(serverName string) *BasicConfig`: Gets basic config from environment variables.
+
+### Testhelpers
+Helpers for HTTP endpoint testing with Echo. Provides models to define requests, responses, and error expectations for tests.
 
 ### Tracing
 Distributed tracing helpers for Go applications.
