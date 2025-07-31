@@ -35,3 +35,14 @@ func Test_GetBasicServerConfigt(t *testing.T) {
 	}
 
 }
+
+func Test_GetTelemetryConfig(t *testing.T) {
+	os.Setenv(env.OTLP_ENDPOINT, "http://localhost:4317")
+	defer os.Unsetenv(env.OTLP_ENDPOINT)
+
+	config := GetTelemetryConfig()
+
+	if config.OTLPEndpoint != "http://localhost:4317" {
+		t.Errorf("Expected OTLPEndpoint to be 'http://localhost:4317', got %s", config.OTLPEndpoint)
+	}
+}

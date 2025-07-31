@@ -7,5 +7,9 @@ const (
 )
 
 const (
+	OTLP_ENDPOINT = "OTLP_ENDPOINT"
+)
+
+const (
 	LocalEnvironment = "local"
 )

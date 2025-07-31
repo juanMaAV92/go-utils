@@ -10,3 +10,9 @@ func GetBasicServerConfig(serverName string) *BasicConfig {
 		ServerName:    serverName,
 	}
 }
+
+func GetTelemetryConfig() *TelemetryConfig {
+	return &TelemetryConfig{
+		OTLPEndpoint: env.GetEnv(env.OTLP_ENDPOINT),
+	}
+}

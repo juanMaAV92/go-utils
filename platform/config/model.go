@@ -10,3 +10,7 @@ type BasicConfig struct {
 	Environment   string
 	ServerName    string
 }
+
+type TelemetryConfig struct {
+	OTLPEndpoint string
+}
