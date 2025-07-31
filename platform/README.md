@@ -1,5 +1,5 @@
 
-# server package
+# platform package
 
 Helpers for configuration and lifecycle management of Echo servers in Go.
 

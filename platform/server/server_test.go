@@ -1,4 +1,4 @@
-package platform
+package server
 
 import (
 	"context"
@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/juanMaAV92/go-utils/env"
+	"github.com/juanMaAV92/go-utils/platform/config"
 )
 
 func Test_server(t *testing.T) {
 
-	config := &BasicConfig{
+	config := &config.BasicConfig{
 		Port:          "8080",
 		GracefullTime: 5 * time.Second,
 		Environment:   env.LocalEnvironment,

@@ -1,4 +1,4 @@
-package platform
+package server
 
 import (
 	"context"
@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/juanMaAV92/go-utils/env"
+	"github.com/juanMaAV92/go-utils/platform/config"
 	"github.com/labstack/echo/v4"
 	"github.com/shopspring/decimal"
 )
 
-func New(config *BasicConfig) (*Server, error) {
+func New(config *config.BasicConfig) (*Server, error) {
 	server := echo.New()
 	server.HideBanner = true
 	server.Debug = config.Environment == env.LocalEnvironment
