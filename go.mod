@@ -3,11 +3,9 @@ module github.com/juanMaAV92/go-utils
 go 1.24
 
 require (
-	github.com/Meraki-Nubia/nubia-go-libs v0.1.13
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/rs/zerolog v1.34.0
-	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.61.0
 	go.opentelemetry.io/otel v1.37.0
@@ -42,5 +40,4 @@ require (
 	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/gorm v1.26.1 // indirect
 )

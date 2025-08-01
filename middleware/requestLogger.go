@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/Meraki-Nubia/nubia-go-libs/log"
+	"github.com/juanMaAV92/go-utils/log"
 )
 
 // Tracing creates an Echo middleware that adds OpenTelemetry tracing

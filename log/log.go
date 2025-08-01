@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	nubiaTrace "github.com/Meraki-Nubia/nubia-go-libs/tracing"
+	"github.com/juanMaAV92/go-utils/tracing"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -88,7 +88,7 @@ func (l *Log) Fatal(ctx context.Context, step, message string, options ...Opts) 
 
 func (l *Log) logMessage(level zerolog.Level, ctx context.Context, step, message string, options ...Opts) {
 	file, function := getCaller()
-	traceID := nubiaTrace.GetTraceIDFromContext(ctx)
+	traceID := tracing.GetTraceIDFromContext(ctx)
 
 	logEntry := l.log.WithLevel(level).
 		Str(traceTag, traceID).
