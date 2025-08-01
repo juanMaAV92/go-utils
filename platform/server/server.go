@@ -8,32 +8,15 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/juanMaAV92/go-utils/env"
-	"github.com/juanMaAV92/go-utils/platform/config"
-	"github.com/labstack/echo/v4"
-	"github.com/shopspring/decimal"
 )
 
-func New(config *config.BasicConfig) (*Server, error) {
-	server := echo.New()
-	server.HideBanner = true
-	server.Debug = config.Environment == env.LocalEnvironment
-	decimal.MarshalJSONWithoutQuotes = true
-
-	return &Server{
-		Instance:    server,
-		BasicConfig: config,
-	}, nil
-}
-
-func (s *Server) Run() <-chan error {
+func (s *Server) Run(port string, gracefulTime time.Duration) <-chan error {
 
 	errC := make(chan error, 1)
-	s.initGracefulShutdown(errC)
+	s.initGracefulShutdown(gracefulTime, errC)
 
 	go func() {
-		if err := s.Instance.Start(":" + s.Port); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := s.Echo.Start(":" + port); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errC <- err
 		}
 	}()
@@ -41,7 +24,7 @@ func (s *Server) Run() <-chan error {
 	return errC
 }
 
-func (s *Server) initGracefulShutdown(errChannel chan error) {
+func (s *Server) initGracefulShutdown(gracefulTime time.Duration, errChannel chan error) {
 
 	ctx, stop := signal.NotifyContext(context.Background(),
 		os.Interrupt,
@@ -51,11 +34,11 @@ func (s *Server) initGracefulShutdown(errChannel chan error) {
 
 	go func() {
 		<-ctx.Done()
-		ctxTimeout, cancel := context.WithTimeout(context.Background(), s.GracefullTime+(1*time.Second))
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), gracefulTime+(1*time.Second))
 		defer func() {
-			time.AfterFunc(s.GracefullTime, func() {
-				s.Instance.Server.SetKeepAlivesEnabled(false)
-				if err := s.Instance.Shutdown(ctxTimeout); err != nil {
+			time.AfterFunc(gracefulTime, func() {
+				s.Echo.Server.SetKeepAlivesEnabled(false)
+				if err := s.Echo.Shutdown(ctxTimeout); err != nil {
 					errChannel <- err
 				}
 				cancel()

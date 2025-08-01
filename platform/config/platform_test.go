@@ -27,8 +27,8 @@ func Test_GetBasicServerConfigt(t *testing.T) {
 	if config.Port != "8080" {
 		t.Errorf("Expected Port to be '8080', got %s", config.Port)
 	}
-	if config.GracefullTime != 10*time.Minute {
-		t.Errorf("Expected GracefullTime to be 10m, got %v", config.GracefullTime)
+	if config.GracefulTime != 10*time.Minute {
+		t.Errorf("Expected GracefullTime to be 10m, got %v", config.GracefulTime)
 	}
 	if config.ServerName != "test" {
 		t.Errorf("Expected AppName to be 'test', got %s", config.ServerName)

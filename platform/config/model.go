@@ -5,10 +5,10 @@ import (
 )
 
 type BasicConfig struct {
-	Port          string
-	GracefullTime time.Duration
-	Environment   string
-	ServerName    string
+	Port         string
+	GracefulTime time.Duration
+	Environment  string
+	ServerName   string
 }
 
 type TelemetryConfig struct {
