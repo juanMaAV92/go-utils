@@ -58,6 +58,9 @@ func extractTraceIDFromHeader(header http.Header) string {
 func propagateTraceID(c echo.Context, traceID string) {
 	c.Set(tracing.ContextTraceIDKey, traceID)
 	c.Response().Header().Set(headers.TraceID, traceID)
+
+	ctxWithTraceID := context.WithValue(c.Request().Context(), tracing.TraceIDKey{}, traceID)
+	c.SetRequest(c.Request().WithContext(ctxWithTraceID))
 }
 
 func generateUUID() string {
