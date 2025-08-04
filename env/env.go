@@ -3,6 +3,7 @@ package env
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -35,4 +36,14 @@ func GetEnvAsDurationWithDefault(key string, defaultValue string) time.Duration 
 		return duration
 	}
 	panic(fmt.Sprintf("Error during default value '%s' conversion to duration for key '%s'", defaultValue, key))
+}
+
+func GetEnvAsIntWithDefault(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
+		panic(fmt.Sprintf("Error during env '%s' conversion to int", key))
+	}
+	return defaultValue
 }

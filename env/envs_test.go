@@ -168,3 +168,64 @@ func Test_GetEnvAsDurationWithDefault(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetEnvAsIntWithDefault(t *testing.T) {
+	tests := []struct {
+		name          string
+		key           string
+		value         string
+		defaultValue  int
+		expectPanic   bool
+		expectedValue int
+	}{
+		{
+			name:          "Valid integer environment variable",
+			key:           "TEST_INT_KEY",
+			value:         "42",
+			defaultValue:  0,
+			expectPanic:   false,
+			expectedValue: 42,
+		},
+		{
+			name:         "Invalid integer environment variable",
+			key:          "TEST_INT_KEY_INVALID",
+			value:        "invalid",
+			defaultValue: 0,
+			expectPanic:  true,
+		},
+		{
+			name:          "Environment variable not set",
+			key:           "TEST_INT_KEY_NOT_SET",
+			value:         "",
+			defaultValue:  10,
+			expectPanic:   false,
+			expectedValue: 10,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up the environment variable
+			if tt.value != "" {
+				os.Setenv(tt.key, tt.value)
+			} else {
+				os.Unsetenv(tt.key)
+			}
+
+			defer func() {
+				if r := recover(); r != nil {
+					if !tt.expectPanic {
+						t.Errorf("Unexpected panic for key %s: %v", tt.key, r)
+					}
+				} else if tt.expectPanic {
+					t.Errorf("Expected panic for key %s but did not panic", tt.key)
+				}
+			}()
+
+			result := GetEnvAsIntWithDefault(tt.key, tt.defaultValue)
+			if result != tt.expectedValue {
+				t.Errorf("Expected value %d, got %d", tt.expectedValue, result)
+			}
+		})
+	}
+}
