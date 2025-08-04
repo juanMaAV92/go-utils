@@ -8,6 +8,7 @@ Utilities for working with environment variables, pointers, paths, and Echo serv
 
 - [Installation](#installation)
 - [Available Packages](#available-packages)
+    - [Database](#database)
     - [env](#env)
     - [log](#log)
     - [middleware](#middleware)
@@ -29,6 +30,12 @@ go get github.com/juanMaAV92/go-utils
 ---
 
 ## Available Packages
+
+### Database
+Database utilities for connecting to PostgreSQL using GORM, including migrations and connection pooling.
+- `DBConfig`: Configuration struct for database connection.
+- `GetDBConfig() *DBConfig`: Retrieves the database configuration from environment variables.
+- `New(cfg DBConfig, logger log.Logger) (*Database, error)`: Initializes a new database connection.
 
 ### env
 Get and validate environment variables easily.
