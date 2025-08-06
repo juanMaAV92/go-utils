@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 )
 
-var JWTConfig *jwtConfig
+var JWTConfig *JwtConfig
 
-func InitJWTConfig(cfg *jwtConfig) {
+func InitJWTConfig(cfg *JwtConfig) {
 	JWTConfig = cfg
 }
 
