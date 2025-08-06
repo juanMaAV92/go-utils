@@ -29,3 +29,8 @@ const (
 	JWTAccessTokenTTL  = "JWT_ACCESS_TOKEN_TTL"
 	JWTRefreshTokenTTL = "JWT_REFRESH_TOKEN_TTL"
 )
+
+const (
+	CacheHost = "CACHE_HOST"
+	CachePort = "CACHE_PORT"
+)

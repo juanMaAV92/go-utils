@@ -8,6 +8,7 @@ Utilities for working with environment variables, pointers, paths, and Echo serv
 
 - [Installation](#installation)
 - [Available Packages](#available-packages)
+    - [Cache](#cache)
     - [Database](#database)
     - [env](#env)
     - [error](#error)
@@ -32,6 +33,9 @@ go get github.com/juanMaAV92/go-utils
 ---
 
 ## Available Packages
+
+### Cache
+A simple interface to interact with Redis as a caching system in Go.
 
 ### Database
 Database utilities for connecting to PostgreSQL using GORM, including migrations and connection pooling.
