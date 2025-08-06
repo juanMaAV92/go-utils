@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var cfg = &jwtConfig{
+var cfg = &JwtConfig{
 	SecretKey:       "test_secret",
 	AccessTokenTTL:  15 * time.Minute,
 	RefreshTokenTTL: 24 * time.Hour,

@@ -7,7 +7,7 @@ import (
 	"github.com/juanMaAV92/go-utils/env"
 )
 
-type jwtConfig struct {
+type JwtConfig struct {
 	SecretKey       string
 	AccessTokenTTL  time.Duration
 	RefreshTokenTTL time.Duration
@@ -15,8 +15,8 @@ type jwtConfig struct {
 	SigningMethod   jwt.SigningMethod
 }
 
-func GetJWTConfig(issuer string, signingMethod jwt.SigningMethod) *jwtConfig {
-	return &jwtConfig{
+func GetJWTConfig(issuer string, signingMethod jwt.SigningMethod) *JwtConfig {
+	return &JwtConfig{
 		SecretKey:       env.GetEnv(env.JWTSecretKey),
 		AccessTokenTTL:  env.GetEnvAsDurationWithDefault(env.JWTAccessTokenTTL, "15m"),
 		RefreshTokenTTL: env.GetEnvAsDurationWithDefault(env.JWTRefreshTokenTTL, "24h"),
