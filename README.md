@@ -10,6 +10,8 @@ Utilities for working with environment variables, pointers, paths, and Echo serv
 - [Available Packages](#available-packages)
     - [Database](#database)
     - [env](#env)
+    - [error](#error)
+    - [jwt](#jwt)
     - [log](#log)
     - [middleware](#middleware)
         - [TraceId](#traceid)
@@ -43,6 +45,30 @@ Get and validate environment variables easily.
 - `GetEnviroment() string`: Returns the current environment.
 - `GetEnvAsDurationWithDefault(key, defaultValue string) time.Duration`: Gets an environment variable as a duration, with default.
 
+### error
+Http error handling utilities. The format is compatible with Echo's HTTP error handling. 
+
+```go
+server := echo.New()
+server.HTTPErrorHandler = error.CustomHTTPErrorHandler
+```
+
+format the error as a JSON response with a status code and message.
+```json
+{
+    "code" : "ERROR_CODE",
+    "messages" : ["Error message 1", "Error message 2"]
+}
+```
+
+### jwt
+JSON Web Token (JWT) utilities for generating and validating tokens.
+- `JWTConfig`: Configuration struct for JWT.
+- `InitJWTConfig(cfg *JWTConfig)`: Initializes the JWT configuration.
+- `GenerateAccessToken(userID string) (string, error)`: Generates an access token for a user.
+- `GenerateRefreshToken(userID string) (string, error)`: Generates a refresh token for a user.
+- `ValidateToken(token string) (*jwt.Token, error)`: Validates a JWT token.
+- `ParseClaims(token string) (jwt.MapClaims, error)`: Parses claims from a JWT token.
 
 ### log
 Helpers for structured logging.

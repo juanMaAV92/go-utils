@@ -3,7 +3,7 @@ module github.com/juanMaAV92/go-utils
 go 1.24
 
 require (
-	github.com/Meraki-Nubia/nubia-go-libs v0.1.13
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgconn v1.14.3
