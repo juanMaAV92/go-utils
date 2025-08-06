@@ -23,3 +23,9 @@ const (
 	PostgresMaxPoolSize = "DB_MAX_POOL_SIZE_POSTGRES"
 	PostgresMaxLifeTime = "DB_MAX_LIFE_TIME_POSTGRES"
 )
+
+const (
+	JWTSecretKey       = "JWT_SECRET_KEY"
+	JWTAccessTokenTTL  = "JWT_ACCESS_TOKEN_TTL"
+	JWTRefreshTokenTTL = "JWT_REFRESH_TOKEN_TTL"
+)
