@@ -17,8 +17,8 @@ type CacheConfig struct {
 	ServerName string
 }
 
-func GetCacheConfig(serverName string) CacheConfig {
-	return CacheConfig{
+func GetCacheConfig(serverName string) *CacheConfig {
+	return &CacheConfig{
 		Host:       env.GetEnv(env.CacheHost),
 		Port:       env.GetEnv(env.CachePort),
 		ServerName: serverName,
