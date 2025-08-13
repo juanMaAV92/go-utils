@@ -44,57 +44,39 @@ func GenerateRefreshToken(userCode uuid.UUID) (string, error) {
 	return generateToken(userCode, JWTConfig.RefreshTokenTTL, "refresh")
 }
 
-func validateToken(tokenString string, shouldSkipValidation bool) (*jwt.Token, error) {
+func parseToken(tokenString string) (*jwt.Token, error) {
 	if JWTConfig == nil || JWTConfig.SigningMethod == nil {
 		return nil, errors.New("JWTConfig or SigningMethod not initialized")
 	}
 
-	var token *jwt.Token
-	var err error
-
-	if shouldSkipValidation {
-		token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("unexpected signing method")
-			}
-			return []byte(JWTConfig.SecretKey), nil
-		}, jwt.WithoutClaimsValidation())
-	} else {
-		token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("unexpected signing method")
-			}
-			return []byte(JWTConfig.SecretKey), nil
-		})
-		if err != nil {
-			return nil, err
+	keyFunc := func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
 		}
-		if !token.Valid {
-			return nil, errors.New("invalid token")
-		}
+		return []byte(JWTConfig.SecretKey), nil
 	}
 
-	return token, err
+	return jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, keyFunc, jwt.WithoutClaimsValidation())
 }
 
-func ParseClaims(tokenString string, skipValidation ...bool) (jwt.MapClaims, error) {
-	if JWTConfig == nil || JWTConfig.SigningMethod == nil {
-		return nil, errors.New("JWTConfig or SigningMethod not initialized")
-	}
-
-	shouldSkipValidation := false
-	if len(skipValidation) > 0 {
-		shouldSkipValidation = skipValidation[0]
-	}
-
-	token, err := validateToken(tokenString, shouldSkipValidation)
+func ParseClaims(tokenString string) (jwt.MapClaims, bool, error) {
+	token, err := parseToken(tokenString)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, errors.New("invalid claims")
+		return nil, false, errors.New("invalid claims")
 	}
-	return claims, nil
+
+	// Validar manualmente la expiración
+	isValid := true
+	if exp, ok := claims["exp"].(float64); ok {
+		if time.Unix(int64(exp), 0).Before(time.Now()) {
+			isValid = false
+		}
+	}
+
+	return claims, isValid, nil
 }
