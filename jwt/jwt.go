@@ -24,7 +24,7 @@ func generateToken(userCode uuid.UUID, ttl time.Duration, tokenType string) (str
 		"exp":       now.Add(ttl).Unix(),
 		"iat":       now.Unix(),
 		"iss":       JWTConfig.Issuer,
-		"type":      "access",
+		"type":      tokenType,
 	}
 	token := jwt.NewWithClaims(JWTConfig.SigningMethod, claims)
 	return token.SignedString([]byte(JWTConfig.SecretKey))
