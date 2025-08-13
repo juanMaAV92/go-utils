@@ -87,19 +87,19 @@ func Test_validateToken(t *testing.T) {
 
 	JWTConfig = nil
 	t.Run("JWTConfig not initialized", func(t *testing.T) {
-		_, err := validateToken(tokenStr)
+		_, err := validateToken(tokenStr, false)
 		assert.Error(t, err)
 	})
 
 	InitJWTConfig(cfg)
 
 	t.Run("Invalid token", func(t *testing.T) {
-		_, err := validateToken(tokenStr + "tampered")
+		_, err := validateToken(tokenStr+"tampered", false)
 		assert.Error(t, err)
 	})
 
 	t.Run("Valid token", func(t *testing.T) {
-		token, err := validateToken(tokenStr)
+		token, err := validateToken(tokenStr, false)
 		assert.NoError(t, err)
 		assert.NotNil(t, token)
 		assert.True(t, token.Valid)

@@ -44,30 +44,54 @@ func GenerateRefreshToken(userCode uuid.UUID) (string, error) {
 	return generateToken(userCode, JWTConfig.RefreshTokenTTL, "refresh")
 }
 
-func validateToken(tokenString string) (*jwt.Token, error) {
+func validateToken(tokenString string, shouldSkipValidation bool) (*jwt.Token, error) {
 	if JWTConfig == nil || JWTConfig.SigningMethod == nil {
 		return nil, errors.New("JWTConfig or SigningMethod not initialized")
 	}
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
+
+	var token *jwt.Token
+	var err error
+
+	if shouldSkipValidation {
+		token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New("unexpected signing method")
+			}
+			return []byte(JWTConfig.SecretKey), nil
+		}, jwt.WithoutClaimsValidation())
+	} else {
+		token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New("unexpected signing method")
+			}
+			return []byte(JWTConfig.SecretKey), nil
+		})
+		if err != nil {
+			return nil, err
 		}
-		return []byte(JWTConfig.SecretKey), nil
-	})
-	if err != nil {
-		return nil, err
+		if !token.Valid {
+			return nil, errors.New("invalid token")
+		}
 	}
-	if !token.Valid {
-		return nil, errors.New("invalid token")
-	}
-	return token, nil
+
+	return token, err
 }
 
-func ParseClaims(tokenString string) (jwt.MapClaims, error) {
-	token, err := validateToken(tokenString)
+func ParseClaims(tokenString string, skipValidation ...bool) (jwt.MapClaims, error) {
+	if JWTConfig == nil || JWTConfig.SigningMethod == nil {
+		return nil, errors.New("JWTConfig or SigningMethod not initialized")
+	}
+
+	shouldSkipValidation := false
+	if len(skipValidation) > 0 {
+		shouldSkipValidation = skipValidation[0]
+	}
+
+	token, err := validateToken(tokenString, shouldSkipValidation)
 	if err != nil {
 		return nil, err
 	}
+
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return nil, errors.New("invalid claims")
