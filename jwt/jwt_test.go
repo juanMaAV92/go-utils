@@ -11,7 +11,7 @@ import (
 
 var cfg = &JwtConfig{
 	SecretKey:       "test_secret",
-	AccessTokenTTL:  15 * time.Minute,
+	AccessTokenTTL:  2 * time.Second,
 	RefreshTokenTTL: 24 * time.Hour,
 	Issuer:          "test_issuer",
 	SigningMethod:   jwt.SigningMethodHS256,
@@ -77,7 +77,7 @@ func Test_GenerateAccessTokenAndRefreshToken(t *testing.T) {
 	}
 }
 
-func Test_validateToken(t *testing.T) {
+func Test_parseToken(t *testing.T) {
 	InitJWTConfig(cfg)
 
 	userCode := uuid.New()
@@ -87,19 +87,27 @@ func Test_validateToken(t *testing.T) {
 
 	JWTConfig = nil
 	t.Run("JWTConfig not initialized", func(t *testing.T) {
-		_, err := validateToken(tokenStr, false)
+		_, err := parseToken(tokenStr)
 		assert.Error(t, err)
 	})
 
 	InitJWTConfig(cfg)
 
-	t.Run("Invalid token", func(t *testing.T) {
-		_, err := validateToken(tokenStr+"tampered", false)
+	t.Run("return error for a invalid token", func(t *testing.T) {
+		_, err := parseToken("invalid_token")
 		assert.Error(t, err)
 	})
 
-	t.Run("Valid token", func(t *testing.T) {
-		token, err := validateToken(tokenStr, false)
+	t.Run("parse function return claim for a valid token", func(t *testing.T) {
+		token, err := parseToken(tokenStr)
+		assert.NoError(t, err)
+		assert.NotNil(t, token)
+		assert.True(t, token.Valid)
+	})
+
+	t.Run("parse function return claim for a expired token", func(t *testing.T) {
+		time.Sleep(5 * time.Second)
+		token, err := parseToken(tokenStr)
 		assert.NoError(t, err)
 		assert.NotNil(t, token)
 		assert.True(t, token.Valid)
@@ -114,11 +122,22 @@ func Test_ParseClaims(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tokenStr)
 
-	claims, err := ParseClaims(tokenStr)
-	assert.NoError(t, err)
-	assert.NotNil(t, claims)
-	assert.Equal(t, userCode.String(), claims["user_code"])
-	assert.Equal(t, cfg.Issuer, claims["iss"])
-	assert.NotZero(t, claims["exp"])
-	assert.NotZero(t, claims["iat"])
+	t.Run("Parse valid token", func(t *testing.T) {
+		claims, isValid, err := ParseClaims(tokenStr)
+		assert.NoError(t, err)
+		assert.True(t, isValid)
+		assert.NotNil(t, claims)
+		assert.Equal(t, userCode.String(), claims["user_code"])
+		assert.Equal(t, cfg.Issuer, claims["iss"])
+		assert.NotZero(t, claims["exp"])
+		assert.NotZero(t, claims["iat"])
+	})
+
+	t.Run("Invalid token", func(t *testing.T) {
+		time.Sleep(5 * time.Second)
+		claims, isValid, err := ParseClaims(tokenStr)
+		assert.NoError(t, err)
+		assert.False(t, isValid)
+		assert.NotNil(t, claims)
+	})
 }
