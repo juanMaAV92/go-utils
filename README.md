@@ -14,7 +14,7 @@ Utilities for working with environment variables, pointers, paths, and Echo serv
 
 ## 📋 Available packages
 
-- [Cache](https://github.com/juanMaAV92/go-utils/tree/main/uierocache)
+- [Cache](https://github.com/juanMaAV92/go-utils/tree/main/cache)
 - [Database](https://github.com/juanMaAV92/go-utils/tree/main/database)
     - [Postgresql](https://github.com/juanMaAV92/go-utils/tree/main/database/postgresql)
 - [env](https://github.com/juanMaAV92/go-utils/tree/main/env)
