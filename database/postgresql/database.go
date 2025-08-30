@@ -1,4 +1,4 @@
-package database
+package postgresql
 
 import (
 	"context"
@@ -208,7 +208,14 @@ func (db *Database) ExecuteRawQuery(ctx context.Context, destination interface{}
 		return err
 	}
 
-	tx := db.instance.WithContext(ctx).Raw(query, args...).Scan(destination)
+	var tx *gorm.DB
+
+	if destination == nil {
+		tx = db.instance.WithContext(ctx).Exec(query, args...)
+	} else {
+		tx = db.instance.WithContext(ctx).Raw(query, args...).Scan(destination)
+	}
+
 	if tx.Error != nil {
 		return handleDatabaseError(ctx, db.logger, tx.Error, rawQueryStep, "Failed to execute raw query")
 	}

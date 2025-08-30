@@ -1,4 +1,4 @@
-# Database Package
+# Postgresql Package
 
 This package provides a high-level database abstraction layer built on top of GORM for PostgreSQL databases. It includes connection management, migrations, error handling, and a clean API for common database operations.
 
