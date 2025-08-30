@@ -52,12 +52,12 @@ func extractTraceIDFromContext(ctx context.Context) string {
 }
 
 func extractTraceIDFromHeader(header http.Header) string {
-	return header.Get(headers.TraceID)
+	return header.Get(headers.XTraceID)
 }
 
 func propagateTraceID(c echo.Context, traceID string) {
 	c.Set(tracing.ContextTraceIDKey, traceID)
-	c.Response().Header().Set(headers.TraceID, traceID)
+	c.Response().Header().Set(headers.XTraceID, traceID)
 
 	ctxWithTraceID := context.WithValue(c.Request().Context(), tracing.TraceIDKey{}, traceID)
 	c.SetRequest(c.Request().WithContext(ctxWithTraceID))

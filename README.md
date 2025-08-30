@@ -19,6 +19,8 @@ Utilities for working with environment variables, pointers, paths, and Echo serv
     - [Postgresql](https://github.com/juanMaAV92/go-utils/tree/main/database/postgresql)
 - [env](https://github.com/juanMaAV92/go-utils/tree/main/env)
 - [error](https://github.com/juanMaAV92/go-utils/tree/main/error)
+- [headers](https://github.com/juanMaAV92/go-utils/tree/main/headers)
+- [httpclient](https://github.com/juanMaAV92/go-utils/tree/main/httpclient)
 - [jwt](https://github.com/juanMaAV92/go-utils/tree/main/jwt)
 - [log](https://github.com/juanMaAV92/go-utils/tree/main/log)
 - [middleware](https://github.com/juanMaAV92/go-utils/tree/main/middleware)
@@ -30,6 +32,7 @@ Utilities for working with environment variables, pointers, paths, and Echo serv
 - [server](https://github.com/juanMaAV92/go-utils/tree/main/server)
 - [Testhelpers](https://github.com/juanMaAV92/go-utils/tree/main/testhelpers)
 - [Tracing](https://github.com/juanMaAV92/go-utils/tree/main/tracing)
+- [Validator](https://github.com/juanMaAV92/go-utils/tree/main/validator)
 
 
 ## Installation
