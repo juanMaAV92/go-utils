@@ -18,3 +18,9 @@ const (
 	StatusBadGatewayCode          = "BAD_GATEWAY"
 	StatusServiceUnavailableCode  = "SERVICE_UNAVAILABLE"
 )
+
+// Validation Error Codes
+const (
+	ValidationErrorCode = "VALIDATION_ERROR"
+	InvalidRequestCode  = "INVALID_REQUEST"
+)

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/Meraki-Nubia/nubia-go-libs/errors"
 	"github.com/go-playground/validator/v10"
+	"github.com/juanMaAV92/go-utils/errors"
 )
 
 type Validator struct {

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Meraki-Nubia/nubia-go-libs/log"
-	"github.com/Meraki-Nubia/nubia-go-libs/tracing"
 	"github.com/go-resty/resty/v2"
+	"github.com/juanMaAV92/go-utils/log"
+	"github.com/juanMaAV92/go-utils/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
