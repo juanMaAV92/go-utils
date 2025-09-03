@@ -149,7 +149,7 @@ func TestFindOne(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := &Database{}
-			found, err := db.FindOne(tt.ctx, tt.model, tt.condition)
+			found, err := db.FindOne(tt.ctx, tt.model, tt.condition, nil)
 
 			if tt.wantErr {
 				assert.Error(t, err)
