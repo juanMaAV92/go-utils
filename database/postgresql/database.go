@@ -100,7 +100,7 @@ func (db *Database) Update(ctx context.Context, model interface{}, updates map[s
 // Returns:
 //   - bool: true if record was found, false if not found
 //   - error: any database error that occurred
-func (db *Database) FindOne(ctx context.Context, destination interface{}, conditions interface{}) (bool, error) {
+func (db *Database) FindOne(ctx context.Context, destination interface{}, conditions interface{}, preloads *[]string) (bool, error) {
 	if err := validateContext(ctx); err != nil {
 		return false, err
 	}
@@ -113,7 +113,16 @@ func (db *Database) FindOne(ctx context.Context, destination interface{}, condit
 		return false, err
 	}
 
-	tx := db.instance.WithContext(ctx).Where(conditions).First(destination)
+	tx := db.instance.WithContext(ctx)
+
+	if preloads != nil {
+		for _, preload := range *preloads {
+			tx = tx.Preload(preload)
+		}
+	}
+
+	tx.Where(conditions).First(destination)
+
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return false, nil

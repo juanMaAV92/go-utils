@@ -76,7 +76,22 @@ err := db.Update(ctx, &user, updates)
 var user User
 found, err := db.FindOne(ctx, &user, map[string]interface{}{
     "email": "john@example.com",
-})
+}, nil)
+if err != nil {
+    // Handle error
+}
+if !found {
+    // Record not found
+}
+```
+
+#### Find Single Record (with Preloads)
+```go
+var user User
+preloads := []string{"Profile", "Orders"}
+found, err := db.FindOne(ctx, &user, map[string]interface{}{
+    "email": "john@example.com",
+}, preloads)
 if err != nil {
     // Handle error
 }
