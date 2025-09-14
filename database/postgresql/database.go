@@ -121,7 +121,7 @@ func (db *Database) FindOne(ctx context.Context, destination interface{}, condit
 		}
 	}
 
-	tx.Where(conditions).First(destination)
+	tx = tx.Where(conditions).First(destination)
 
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
