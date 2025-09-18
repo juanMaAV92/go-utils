@@ -209,6 +209,49 @@ func TestFindMany(t *testing.T) {
 	}
 }
 
+func TestCount(t *testing.T) {
+	tests := []struct {
+		name      string
+		ctx       context.Context
+		model     interface{}
+		condition interface{}
+		wantErr   bool
+		errString string
+	}{
+		{
+			name:      "nil context",
+			ctx:       nil,
+			model:     &struct{ Name string }{},
+			condition: "name = 'test'",
+			wantErr:   true,
+			errString: errContextRequired,
+		},
+		{
+			name:      "nil model",
+			ctx:       context.Background(),
+			model:     nil,
+			condition: "name = 'test'",
+			wantErr:   true,
+			errString: errModelRequired,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &Database{}
+			count, err := db.Count(tt.ctx, tt.model, tt.condition)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Equal(t, tt.errString, err.Error())
+				assert.Equal(t, int64(0), count)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestFindWithJoins(t *testing.T) {
 	tests := []struct {
 		name      string
