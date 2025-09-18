@@ -17,6 +17,7 @@ const (
 	updateStep    = "updating record"
 	findOneStep   = "finding single record"
 	findManyStep  = "finding multiple records"
+	countStep     = "counting records"
 	joinQueryStep = "executing join query"
 	rawQueryStep  = "executing raw query"
 
@@ -163,6 +164,39 @@ func (db *Database) FindMany(ctx context.Context, destination interface{}, condi
 	}
 
 	return nil
+}
+
+// Count returns the total number of records matching the given conditions
+// Parameters:
+//   - ctx: Request context for cancellation and timeouts
+//   - model: Model struct or table name to count records from
+//   - conditions: Query conditions (map, struct, string with placeholders, or nil)
+//   - args: Additional arguments for placeholder values when using string conditions
+func (db *Database) Count(ctx context.Context, model interface{}, conditions interface{}, args ...interface{}) (int64, error) {
+	if err := validateContext(ctx); err != nil {
+		return 0, err
+	}
+
+	if err := validateModel(model); err != nil {
+		return 0, err
+	}
+
+	tx := db.instance.WithContext(ctx).Model(model)
+
+	if conditions != nil {
+		if len(args) > 0 {
+			tx = tx.Where(conditions, args...)
+		} else {
+			tx = tx.Where(conditions)
+		}
+	}
+
+	var count int64
+	if err := tx.Count(&count).Error; err != nil {
+		return 0, handleDatabaseError(ctx, db.logger, err, countStep, "Failed to count records")
+	}
+
+	return count, nil
 }
 
 // FindWithJoins executes complex queries with JOIN operations

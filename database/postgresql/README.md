@@ -15,7 +15,7 @@ This package provides a high-level database abstraction layer built on top of GO
 
 ## Main Files
 
-- `database.go`: Core database operations (Create, Update, FindOne, FindMany, etc.)
+- `database.go`: Core database operations (Create, Update, FindOne, FindMany, Count, etc.)
 - `config.go`: Connection configuration and initialization
 - `model.go`: Data models and configuration structures
 - `database_test.go`: Unit tests for validation logic
@@ -115,6 +115,69 @@ options := &database.QueryOptions{
 err := db.FindMany(ctx, &users, map[string]interface{}{
     "active": true,
 }, options)
+```
+
+#### Count Records
+```go
+// Count all records
+totalUsers, err := db.Count(ctx, &User{}, nil)
+
+// Count with conditions
+activeUsers, err := db.Count(ctx, &User{}, "status <> ? AND created_at > ?", "INACTIVE", time.Now().AddDate(0, -1, 0))
+```
+
+### Query Conditions
+
+The `conditions` parameter supports multiple formats for flexible querying. Currently available in `Count()` function, with planned migration to all Find operations.
+
+> **Note**: Advanced condition support with placeholders is currently implemented for `Count()`. Future versions will extend this functionality to `FindOne()`, `FindMany()`, and other query operations.
+
+#### Map Conditions (Equality only)
+```go
+conditions := map[string]interface{}{
+    "status": "ACTIVE",
+    "verified": true,
+}
+```
+
+#### String Conditions with Placeholders (Recommended)
+```go
+// Comparison operators
+"status <> ?"          // Not equal
+"amount > ?"           // Greater than
+"created_at >= ?"      // Greater or equal
+
+// Multiple conditions
+"status = ? AND amount > ? AND created_at > ?"
+
+// IN operator
+"status IN ?"          // Pass slice as argument
+
+// LIKE for partial matches
+"name LIKE ?"          // Pass "%pattern%" as argument
+
+// IS NULL / IS NOT NULL
+"deleted_at IS NULL"   // No arguments needed
+```
+
+#### Common Examples
+```go
+// Not equal
+db.Count(ctx, &Order{}, "status <> ?", "CANCELLED")
+
+// Range queries
+db.Count(ctx, &Order{}, "amount BETWEEN ? AND ?", 100.0, 1000.0)
+
+// IN operator with slice
+statuses := []string{"PENDING", "PROCESSING"}
+db.Count(ctx, &Order{}, "status IN ?", statuses)
+
+// Pattern matching
+db.Count(ctx, &User{}, "email LIKE ?", "%@gmail.com")
+
+// Complex conditions
+db.Count(ctx, &Order{}, "status <> ? AND amount > ? AND created_at > ?", 
+    "CANCELLED", 100.0, time.Now().AddDate(0, -1, 0))
 ```
 
 ### Advanced Queries
