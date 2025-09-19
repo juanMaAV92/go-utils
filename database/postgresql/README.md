@@ -5,6 +5,7 @@ This package provides a high-level database abstraction layer built on top of GO
 ## Features
 
 - **Connection Management**: Singleton pattern with connection pooling and retries
+- **Transaction Support**: Safe transaction management with automatic rollback and panic recovery
 - **Automatic Migrations**: Built-in migration support using golang-migrate
 - **Error Handling**: User-friendly error messages with PostgreSQL error code mapping
 - **Query Builder**: Support for complex queries including JOINs and raw SQL
@@ -229,6 +230,76 @@ query := `
 `
 err := db.ExecuteRawQuery(ctx, &results, query, time.Now().AddDate(0, -1, 0))
 ```
+
+### Transactions
+
+The `WithTransaction` method provides safe transaction management with automatic rollback on errors or panics.
+
+#### Basic Transaction Usage
+```go
+err := db.WithTransaction(ctx, func(txDB *Database) error {
+    // Create a user
+    user := &User{Name: "John Doe", Email: "john@example.com"}
+    if err := txDB.Create(ctx, user); err != nil {
+        return err // This will trigger a rollback
+    }
+    
+    // Create related profile
+    profile := &Profile{UserID: user.ID, Bio: "Software Engineer"}
+    if err := txDB.Create(ctx, profile); err != nil {
+        return err // This will also trigger a rollback
+    }
+    
+    return nil // Success - transaction will be committed
+})
+
+if err != nil {
+    // Handle transaction error
+}
+```
+
+#### Complex Transaction Example
+```go
+err := db.WithTransaction(ctx, func(txDB *Database) error {
+    // Update inventory
+    rowsAffected, err := txDB.Update(ctx, &product, 
+        map[string]interface{}{"quantity": product.Quantity - orderQuantity},
+        "quantity >= ? AND status = ?", orderQuantity, "ACTIVE")
+    
+    if err != nil {
+        return err
+    }
+    
+    if rowsAffected == 0 {
+        return errors.New("insufficient inventory or product not available")
+    }
+    
+    // Create order record
+    order := &Order{
+        ProductID: product.ID,
+        Quantity:  orderQuantity,
+        Status:    "PENDING",
+    }
+    
+    if err := txDB.Create(ctx, order); err != nil {
+        return err
+    }
+    
+    // Update user's order count
+    _, err = txDB.Update(ctx, &user,
+        map[string]interface{}{"order_count": gorm.Expr("order_count + 1")},
+        "id = ?", user.ID)
+    
+    return err
+})
+```
+
+#### Transaction Features
+- **Automatic Rollback**: Transactions are automatically rolled back on any error or panic
+- **Panic Recovery**: Panics within transactions are caught, rolled back, and re-thrown
+- **Nested Operations**: All database operations within the transaction use the same connection
+- **Context Support**: Full context support for cancellation and timeouts
+- **Comprehensive Logging**: Debug logs for transaction lifecycle and detailed error logs for rollback failures
 
 ## Error Handling
 
