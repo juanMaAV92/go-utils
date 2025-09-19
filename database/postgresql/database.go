@@ -71,25 +71,41 @@ func (db *Database) Create(ctx context.Context, destination interface{}) error {
 //   - ctx: Request context for cancellation and timeouts
 //   - model: Pointer to the model struct to be updated (identifies the record)
 //   - updates: Map of field names to new values
-func (db *Database) Update(ctx context.Context, model interface{}, updates map[string]interface{}) error {
+//   - conditions: Additional conditions (map, struct, string with placeholders, or nil)
+//   - args: Additional arguments for placeholder values when using string conditions
+//
+// Returns:
+//   - int64: Number of records that were actually updated
+//   - error: Any database error that occurred
+func (db *Database) Update(ctx context.Context, model interface{}, updates map[string]interface{}, conditions interface{}, args ...interface{}) (int64, error) {
 	if err := validateContext(ctx); err != nil {
-		return err
+		return 0, err
 	}
 
 	if err := validateModel(model); err != nil {
-		return err
+		return 0, err
 	}
 
 	if err := validateUpdates(updates); err != nil {
-		return err
+		return 0, err
 	}
 
-	tx := db.instance.WithContext(ctx).Model(model).Updates(updates)
+	tx := db.instance.WithContext(ctx).Model(model)
+
+	if conditions != nil {
+		if len(args) > 0 {
+			tx = tx.Where(conditions, args...)
+		} else {
+			tx = tx.Where(conditions)
+		}
+	}
+
+	tx = tx.Updates(updates)
 	if tx.Error != nil {
-		return handleDatabaseError(ctx, db.logger, tx.Error, updateStep, "Failed to update record")
+		return 0, handleDatabaseError(ctx, db.logger, tx.Error, updateStep, "Failed to update record")
 	}
 
-	return nil
+	return tx.RowsAffected, nil
 }
 
 // FindOne retrieves a single record based on the given conditions

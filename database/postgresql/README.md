@@ -64,11 +64,21 @@ if err != nil {
 
 #### Update Records
 ```go
+// Basic update
 updates := map[string]interface{}{
     "name": "Jane Doe",
     "email": "jane@example.com",
 }
-err := db.Update(ctx, &user, updates)
+rowsAffected, err := db.Update(ctx, &user, updates, nil)
+
+// Update with conditions (prevent race conditions)
+rowsAffected, err := db.Update(ctx, &user, updates, "version = ? AND status = ?", 5, "ACTIVE")
+if err != nil {
+    // Handle error
+}
+if rowsAffected == 0 {
+    // No records updated (not found or conditions not met)
+}
 ```
 
 #### Find Single Record
@@ -128,9 +138,9 @@ activeUsers, err := db.Count(ctx, &User{}, "status <> ? AND created_at > ?", "IN
 
 ### Query Conditions
 
-The `conditions` parameter supports multiple formats for flexible querying. Currently available in `Count()` function, with planned migration to all Find operations.
+The `conditions` parameter supports multiple formats for flexible querying. Currently available in `Count()` and `Update()` functions, with planned migration to all Find operations.
 
-> **Note**: Advanced condition support with placeholders is currently implemented for `Count()`. Future versions will extend this functionality to `FindOne()`, `FindMany()`, and other query operations.
+> **Note**: Advanced condition support with placeholders is implemented for `Count()` and `Update()`. Future versions will extend this functionality to `FindOne()`, `FindMany()`, and other query operations.
 
 #### Map Conditions (Equality only)
 ```go
@@ -162,11 +172,13 @@ conditions := map[string]interface{}{
 
 #### Common Examples
 ```go
-// Not equal
+// Count examples
 db.Count(ctx, &Order{}, "status <> ?", "CANCELLED")
-
-// Range queries
 db.Count(ctx, &Order{}, "amount BETWEEN ? AND ?", 100.0, 1000.0)
+
+// Update examples (race condition prevention)
+updates := map[string]interface{}{"status": "PROCESSING"}
+db.Update(ctx, &order, updates, "status = ? AND version = ?", "PENDING", 5)
 
 // IN operator with slice
 statuses := []string{"PENDING", "PROCESSING"}
