@@ -13,13 +13,14 @@ import (
 
 const (
 	// Database operation steps for logging
-	createStep    = "creating record"
-	updateStep    = "updating record"
-	findOneStep   = "finding single record"
-	findManyStep  = "finding multiple records"
-	countStep     = "counting records"
-	joinQueryStep = "executing join query"
-	rawQueryStep  = "executing raw query"
+	createStep      = "creating record"
+	updateStep      = "updating record"
+	findOneStep     = "finding single record"
+	findManyStep    = "finding multiple records"
+	countStep       = "counting records"
+	joinQueryStep   = "executing join query"
+	rawQueryStep    = "executing raw query"
+	transactionStep = "transaction"
 
 	// Validation error messages
 	errContextRequired          = "context is required"
@@ -32,6 +33,7 @@ const (
 	errQueryRequired            = "query is required"
 	errBaseTableRequired        = "base table is required"
 	errJoinsRequired            = "at least one join is required"
+	errTransactionFnRequired    = "transaction function is required"
 
 	// PostgreSQL error codes
 	pgUniqueViolation     = "23505"
@@ -279,6 +281,72 @@ func (db *Database) ExecuteRawQuery(ctx context.Context, destination interface{}
 		return handleDatabaseError(ctx, db.logger, tx.Error, rawQueryStep, "Failed to execute raw query")
 	}
 
+	return nil
+}
+
+// WithTransaction executes a function within a database transaction
+// The transaction is automatically committed if the function returns nil,
+// or rolled back if the function returns an error or panics.
+//
+// Parameters:
+//   - ctx: Request context for cancellation and timeouts
+//   - fn: Function to execute within the transaction. Receives a Database instance
+//         that operates within the transaction context
+//
+// Returns:
+//   - error: Any error from beginning the transaction, executing the function,
+//           or committing the transaction
+
+func (db *Database) WithTransaction(ctx context.Context, fn func(*Database) error) error {
+	if err := validateContext(ctx); err != nil {
+		return err
+	}
+
+	if fn == nil {
+		return errors.New(errTransactionFnRequired)
+	}
+
+	db.logger.Debug(ctx, transactionStep, "Starting database transaction")
+
+	tx := db.instance.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return handleDatabaseError(ctx, db.logger, tx.Error, transactionStep, "Failed to begin transaction")
+	}
+
+	txDB := &Database{
+		instance: tx,
+		logger:   db.logger,
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			if rollbackErr := tx.Rollback().Error; rollbackErr != nil {
+				db.logger.Error(ctx, transactionStep, "Failed to rollback after panic",
+					log.Field("panic", r), log.Field("rollback_error", rollbackErr.Error()))
+			} else {
+				db.logger.Debug(ctx, transactionStep, "Transaction rolled back due to panic",
+					log.Field("panic", r))
+			}
+			panic(r)
+		}
+	}()
+
+	if err := fn(txDB); err != nil {
+		if rollbackErr := tx.Rollback().Error; rollbackErr != nil {
+			db.logger.Error(ctx, transactionStep, "Failed to rollback transaction",
+				log.Field("original_error", err.Error()), log.Field("rollback_error", rollbackErr.Error()))
+		} else {
+			db.logger.Debug(ctx, transactionStep, "Transaction rolled back due to error",
+				log.Field("error", err.Error()))
+		}
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return handleDatabaseError(ctx, db.logger, err, transactionStep, "Failed to commit transaction")
+	}
+
+	db.logger.Debug(ctx, transactionStep, "Transaction committed successfully")
 	return nil
 }
 
