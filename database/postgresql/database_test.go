@@ -99,11 +99,12 @@ func TestUpdate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := &Database{}
-			err := db.Update(tt.ctx, tt.model, tt.updates)
+			rowsAffected, err := db.Update(tt.ctx, tt.model, tt.updates, nil)
 
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Equal(t, tt.errString, err.Error())
+				assert.Equal(t, int64(0), rowsAffected)
 			} else {
 				assert.NoError(t, err)
 			}
