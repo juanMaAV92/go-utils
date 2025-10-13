@@ -58,6 +58,16 @@ type QueryOptions struct {
 	Preloads   []string           `json:"preloads,omitempty"`
 }
 
+type QueryResult struct {
+	RowsAffected int64 `json:"rows_affected"` // Number of rows affected by INSERT, UPDATE, DELETE
+	Found        bool  `json:"found"`         // Whether records were found by SELECT queries
+}
+
+// TransactionFunc defines the function signature for transaction callbacks
+// The function receives a Database instance configured to use the transaction
+// Return nil to commit the transaction, or an error to rollback
+type TransactionFunc func(tx *Database) error
+
 func GetDBConfig() *DBConfig {
 	return &DBConfig{
 		Host:        env.GetEnv(env.PostgresHost),

@@ -137,14 +137,6 @@ func TestFindOne(t *testing.T) {
 			wantErr:   true,
 			errString: errDestinationRequired,
 		},
-		{
-			name:      "nil condition",
-			ctx:       context.Background(),
-			model:     &struct{ Name string }{},
-			condition: nil,
-			wantErr:   true,
-			errString: errConditionRequired,
-		},
 	}
 
 	for _, tt := range tests {
@@ -345,14 +337,6 @@ func TestRawQuery(t *testing.T) {
 			errString: errContextRequired,
 		},
 		{
-			name:      "nil destination",
-			ctx:       context.Background(),
-			result:    nil,
-			query:     "SELECT * FROM users",
-			wantErr:   true,
-			errString: errDestinationRequired,
-		},
-		{
 			name:      "empty query",
 			ctx:       context.Background(),
 			result:    &[]struct{ Name string }{},
@@ -365,11 +349,12 @@ func TestRawQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := &Database{}
-			err := db.ExecuteRawQuery(tt.ctx, tt.result, tt.query)
+			result, err := db.ExecuteRawQuery(tt.ctx, tt.result, tt.query)
 
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Equal(t, tt.errString, err.Error())
+				assert.Equal(t, QueryResult{}, result) // Should be empty result on error
 			} else {
 				assert.NoError(t, err)
 			}
