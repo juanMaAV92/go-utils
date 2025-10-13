@@ -15,6 +15,8 @@ Utilities for working with environment variables, pointers, paths, and Echo serv
 ## 📋 Available packages
 
 - [Cache](https://github.com/juanMaAV92/go-utils/tree/main/cache)
+- [Conversion](https://github.com/juanMaAV92/go-utils/tree/main/conversion)
+- [Crypto](https://github.com/juanMaAV92/go-utils/tree/main/crypto)
 - [Database](https://github.com/juanMaAV92/go-utils/tree/main/database)
     - [Postgresql](https://github.com/juanMaAV92/go-utils/tree/main/database/postgresql)
 - [env](https://github.com/juanMaAV92/go-utils/tree/main/env)
@@ -27,6 +29,7 @@ Utilities for working with environment variables, pointers, paths, and Echo serv
     - [TraceId](https://github.com/juanMaAV92/go-utils/tree/main/middleware/traceid)
     - [Tracing](https://github.com/juanMaAV92/go-utils/tree/main/middleware/tracing)
     - [Logging](https://github.com/juanMaAV92/go-utils/tree/main/middleware/logging)
+- [Pagination](https://github.com/juanMaAV92/go-utils/tree/main/pagination)
 - [Path](https://github.com/juanMaAV92/go-utils/tree/main/path)
 - [Pointers](https://github.com/juanMaAV92/go-utils/tree/main/pointers)
 - [server](https://github.com/juanMaAV92/go-utils/tree/main/server)
