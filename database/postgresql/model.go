@@ -58,6 +58,11 @@ type QueryOptions struct {
 	Preloads   []string           `json:"preloads,omitempty"`
 }
 
+type QueryResult struct {
+	RowsAffected int64 `json:"rows_affected"` // Number of rows affected by INSERT, UPDATE, DELETE
+	Found        bool  `json:"found"`         // Whether records were found by SELECT queries
+}
+
 func GetDBConfig() *DBConfig {
 	return &DBConfig{
 		Host:        env.GetEnv(env.PostgresHost),

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jackc/pgconn"
-	"github.com/juanMaAV92/go-utils/log"
 	"gorm.io/gorm"
 )
 
@@ -20,50 +18,28 @@ const (
 	countStep     = "counting records"
 	joinQueryStep = "executing join query"
 	rawQueryStep  = "executing raw query"
-
-	// Validation error messages
-	errContextRequired          = "context is required"
-	errDestinationRequired      = "destination is required"
-	errDestinationMustBePointer = "destination must be a pointer"
-	errModelRequired            = "model is required"
-	errUpdatesRequired          = "updates are required"
-	errConditionRequired        = "condition is required"
-	errConfigRequired           = "configuration is required"
-	errQueryRequired            = "query is required"
-	errBaseTableRequired        = "base table is required"
-	errJoinsRequired            = "at least one join is required"
-
-	// PostgreSQL error codes
-	pgUniqueViolation     = "23505"
-	pgCheckViolation      = "23514"
-	pgForeignKeyViolation = "23503"
-
-	// User-friendly error messages
-	msgDuplicateRecord     = "a record with the same values already exists"
-	msgConstraintViolation = "the provided data violates database constraints"
-	msgInvalidReference    = "invalid reference in the provided data"
-	msgDatabaseError       = "an unexpected database error occurred"
 )
 
 // Create inserts a new record into the database
 // Parameters:
 //   - ctx: Request context for cancellation and timeouts
 //   - destination: Pointer to the struct to be created (will be populated with generated values)
-func (db *Database) Create(ctx context.Context, destination interface{}) error {
-	if err := validateContext(ctx); err != nil {
-		return err
+func (db *Database) Create(ctx context.Context, destination interface{}) (err error) {
+	if err = validateContext(ctx); err != nil {
+		return
 	}
 
-	if err := validateDestination(destination); err != nil {
-		return err
+	if err = validateDestination(destination); err != nil {
+		return
 	}
 
 	tx := db.instance.WithContext(ctx).Create(destination)
 	if tx.Error != nil {
-		return handleDatabaseError(ctx, db.logger, tx.Error, createStep, "Failed to create record")
+		err = handleDatabaseError(ctx, db.logger, tx.Error, createStep, "Failed to create record")
+		return
 	}
 
-	return nil
+	return
 }
 
 // Update modifies an existing record in the database
@@ -77,17 +53,17 @@ func (db *Database) Create(ctx context.Context, destination interface{}) error {
 // Returns:
 //   - int64: Number of records that were actually updated
 //   - error: Any database error that occurred
-func (db *Database) Update(ctx context.Context, model interface{}, updates map[string]interface{}, conditions interface{}, args ...interface{}) (int64, error) {
-	if err := validateContext(ctx); err != nil {
-		return 0, err
+func (db *Database) Update(ctx context.Context, model interface{}, updates map[string]interface{}, conditions interface{}, args ...interface{}) (rowsAffected int64, err error) {
+	if err = validateContext(ctx); err != nil {
+		return
 	}
 
-	if err := validateModel(model); err != nil {
-		return 0, err
+	if err = validateModel(model); err != nil {
+		return
 	}
 
-	if err := validateUpdates(updates); err != nil {
-		return 0, err
+	if err = validateUpdates(updates); err != nil {
+		return
 	}
 
 	tx := db.instance.WithContext(ctx).Model(model)
@@ -102,32 +78,32 @@ func (db *Database) Update(ctx context.Context, model interface{}, updates map[s
 
 	tx = tx.Updates(updates)
 	if tx.Error != nil {
-		return 0, handleDatabaseError(ctx, db.logger, tx.Error, updateStep, "Failed to update record")
+		err = handleDatabaseError(ctx, db.logger, tx.Error, updateStep, "Failed to update record")
+		return
 	}
 
-	return tx.RowsAffected, nil
+	rowsAffected = tx.RowsAffected
+	return
 }
 
 // FindOne retrieves a single record based on the given conditions
 // Parameters:
 //   - ctx: Request context for cancellation and timeouts
 //   - destination: Pointer to struct where the result will be stored
-//   - conditions: Query conditions (map, struct, or string)
+//   - conditions: Query conditions (map, struct, string with placeholders, or nil)
+//   - preloads: Optional list of associations to preload
+//   - args: Additional arguments for placeholder values when using string conditions
 //
 // Returns:
 //   - bool: true if record was found, false if not found
 //   - error: any database error that occurred
-func (db *Database) FindOne(ctx context.Context, destination interface{}, conditions interface{}, preloads *[]string) (bool, error) {
-	if err := validateContext(ctx); err != nil {
-		return false, err
+func (db *Database) FindOne(ctx context.Context, destination interface{}, conditions interface{}, preloads *[]string, args ...interface{}) (found bool, err error) {
+	if err = validateContext(ctx); err != nil {
+		return
 	}
 
-	if err := validateDestination(destination); err != nil {
-		return false, err
-	}
-
-	if err := validateConditions(conditions); err != nil {
-		return false, err
+	if err = validateDestination(destination); err != nil {
+		return
 	}
 
 	tx := db.instance.WithContext(ctx)
@@ -138,48 +114,64 @@ func (db *Database) FindOne(ctx context.Context, destination interface{}, condit
 		}
 	}
 
-	tx = tx.Where(conditions).First(destination)
+	if conditions != nil {
+		if len(args) > 0 {
+			tx = tx.Where(conditions, args...)
+		} else {
+			tx = tx.Where(conditions)
+		}
+	}
+
+	tx = tx.First(destination)
 
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
-		return false, handleDatabaseError(ctx, db.logger, tx.Error, findOneStep, "Failed to find record")
+		err = handleDatabaseError(ctx, db.logger, tx.Error, findOneStep, "Failed to find record")
+		return
 	}
 
-	return true, nil
+	found = true
+	return
 }
 
 // FindMany retrieves multiple records based on the given conditions
 // Parameters:
 //   - ctx: Request context for cancellation and timeouts
 //   - destination: Pointer to slice where results will be stored
-//   - conditions: Query conditions (map, struct, or string)
+//   - conditions: Query conditions (map, struct, string with placeholders, or nil)
 //   - options: Optional query parameters (pagination, ordering, preloads)
-func (db *Database) FindMany(ctx context.Context, destination interface{}, conditions interface{}, options *QueryOptions) error {
-	if err := validateContext(ctx); err != nil {
-		return err
+//   - args: Additional arguments for placeholder values when using string conditions
+func (db *Database) FindMany(ctx context.Context, destination interface{}, conditions interface{}, options *QueryOptions, args ...interface{}) (err error) {
+	if err = validateContext(ctx); err != nil {
+		return
 	}
 
-	if err := validateDestination(destination); err != nil {
-		return err
+	if err = validateDestination(destination); err != nil {
+		return
 	}
 
 	tx := db.instance.WithContext(ctx)
 
 	if conditions != nil {
-		tx = tx.Where(conditions)
+		if len(args) > 0 {
+			tx = tx.Where(conditions, args...)
+		} else {
+			tx = tx.Where(conditions)
+		}
 	}
 
 	if options != nil {
 		tx = applyQueryOptions(tx, options)
 	}
 
-	if err := tx.Find(destination).Error; err != nil {
-		return handleDatabaseError(ctx, db.logger, err, findManyStep, "Failed to find records")
+	if err = tx.Find(destination).Error; err != nil {
+		err = handleDatabaseError(ctx, db.logger, err, findManyStep, "Failed to find records")
+		return
 	}
 
-	return nil
+	return
 }
 
 // Count returns the total number of records matching the given conditions
@@ -188,13 +180,13 @@ func (db *Database) FindMany(ctx context.Context, destination interface{}, condi
 //   - model: Model struct or table name to count records from
 //   - conditions: Query conditions (map, struct, string with placeholders, or nil)
 //   - args: Additional arguments for placeholder values when using string conditions
-func (db *Database) Count(ctx context.Context, model interface{}, conditions interface{}, args ...interface{}) (int64, error) {
-	if err := validateContext(ctx); err != nil {
-		return 0, err
+func (db *Database) Count(ctx context.Context, model interface{}, conditions interface{}, args ...interface{}) (totalRecords int64, err error) {
+	if err = validateContext(ctx); err != nil {
+		return
 	}
 
-	if err := validateModel(model); err != nil {
-		return 0, err
+	if err = validateModel(model); err != nil {
+		return
 	}
 
 	tx := db.instance.WithContext(ctx).Model(model)
@@ -207,12 +199,12 @@ func (db *Database) Count(ctx context.Context, model interface{}, conditions int
 		}
 	}
 
-	var count int64
-	if err := tx.Count(&count).Error; err != nil {
-		return 0, handleDatabaseError(ctx, db.logger, err, countStep, "Failed to count records")
+	if err = tx.Count(&totalRecords).Error; err != nil {
+		err = handleDatabaseError(ctx, db.logger, err, countStep, "Failed to count records")
+		return
 	}
 
-	return count, nil
+	return
 }
 
 // FindWithJoins executes complex queries with JOIN operations
@@ -220,17 +212,17 @@ func (db *Database) Count(ctx context.Context, model interface{}, conditions int
 //   - ctx: Request context for cancellation and timeouts
 //   - destination: Pointer to slice where results will be stored
 //   - config: Join configuration defining tables, conditions, and options
-func (db *Database) FindWithJoins(ctx context.Context, destination interface{}, config JoinConfig) error {
-	if err := validateContext(ctx); err != nil {
-		return err
+func (db *Database) FindWithJoins(ctx context.Context, destination interface{}, config JoinConfig) (err error) {
+	if err = validateContext(ctx); err != nil {
+		return
 	}
 
-	if err := validateDestination(destination); err != nil {
-		return err
+	if err = validateDestination(destination); err != nil {
+		return
 	}
 
-	if err := validateJoinConfig(config); err != nil {
-		return err
+	if err = validateJoinConfig(config); err != nil {
+		return
 	}
 
 	tx := db.instance.WithContext(ctx).Table(config.BaseTable)
@@ -241,45 +233,60 @@ func (db *Database) FindWithJoins(ctx context.Context, destination interface{}, 
 
 	tx = applyJoinOptions(tx, config)
 
-	if err := tx.Find(destination).Error; err != nil {
-		return handleDatabaseError(ctx, db.logger, err, joinQueryStep, "Failed to execute join query")
+	if err = tx.Find(destination).Error; err != nil {
+		err = handleDatabaseError(ctx, db.logger, err, joinQueryStep, "Failed to execute join query")
+		return
 	}
 
-	return nil
+	return
 }
 
-// ExecuteRawQuery executes a raw SQL query with parameters
+// ExecuteRawQuery executes a raw SQL query with parameters and returns detailed results
 // Parameters:
 //   - ctx: Request context for cancellation and timeouts
-//   - destination: Pointer where results will be stored
+//   - destination: Pointer where results will be stored (nil for non-SELECT queries)
 //   - query: SQL query string with placeholders (?)
 //   - args: Query arguments to replace placeholders
-func (db *Database) ExecuteRawQuery(ctx context.Context, destination interface{}, query string, args ...interface{}) error {
-	if err := validateContext(ctx); err != nil {
-		return err
+//
+// Returns:
+//   - QueryResult: Contains RowsAffected (for INSERT/UPDATE/DELETE) and Found (for SELECT)
+//   - error: Any database error that occurred
+func (db *Database) ExecuteRawQuery(ctx context.Context, destination interface{}, query string, args ...interface{}) (result QueryResult, err error) {
+	if err = validateContext(ctx); err != nil {
+		return
 	}
 
-	if err := validateDestination(destination); err != nil {
-		return err
-	}
-
-	if err := validateQuery(query); err != nil {
-		return err
+	if err = validateQuery(query); err != nil {
+		return
 	}
 
 	var tx *gorm.DB
 
 	if destination == nil {
+		// For non-SELECT queries (INSERT, UPDATE, DELETE)
 		tx = db.instance.WithContext(ctx).Exec(query, args...)
+		if tx.Error != nil {
+			err = handleDatabaseError(ctx, db.logger, tx.Error, rawQueryStep, "Failed to execute raw query")
+			return
+		}
+		result.RowsAffected = tx.RowsAffected
+		result.Found = tx.RowsAffected > 0
 	} else {
+		// For SELECT queries
+		if err = validateDestination(destination); err != nil {
+			return
+		}
+
 		tx = db.instance.WithContext(ctx).Raw(query, args...).Scan(destination)
+		if tx.Error != nil {
+			err = handleDatabaseError(ctx, db.logger, tx.Error, rawQueryStep, "Failed to execute raw query")
+			return
+		}
+		result.RowsAffected = tx.RowsAffected
+		result.Found = tx.RowsAffected > 0
 	}
 
-	if tx.Error != nil {
-		return handleDatabaseError(ctx, db.logger, tx.Error, rawQueryStep, "Failed to execute raw query")
-	}
-
-	return nil
+	return
 }
 
 // Validation methods for consistent parameter checking
@@ -313,13 +320,6 @@ func validateModel(model interface{}) error {
 func validateUpdates(updates map[string]interface{}) error {
 	if len(updates) == 0 {
 		return errors.New(errUpdatesRequired)
-	}
-	return nil
-}
-
-func validateConditions(conditions interface{}) error {
-	if conditions == nil {
-		return errors.New(errConditionRequired)
 	}
 	return nil
 }
@@ -408,26 +408,4 @@ func applyJoinOptions(tx *gorm.DB, config JoinConfig) *gorm.DB {
 	}
 
 	return tx
-}
-
-// Error handling
-func handleDatabaseError(ctx context.Context, logger log.Logger, err error, step, message string) error {
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil
-	}
-
-	logger.Error(ctx, step, message, log.Field("error", err.Error()))
-
-	if pgErr, ok := err.(*pgconn.PgError); ok {
-		switch pgErr.Code {
-		case pgUniqueViolation:
-			return errors.New(msgDuplicateRecord)
-		case pgCheckViolation:
-			return errors.New(msgConstraintViolation)
-		case pgForeignKeyViolation:
-			return errors.New(msgInvalidReference)
-		}
-	}
-
-	return errors.New(msgDatabaseError)
 }

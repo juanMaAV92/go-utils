@@ -93,6 +93,9 @@ if err != nil {
 if !found {
     // Record not found
 }
+
+// With string conditions and arguments
+found, err := db.FindOne(ctx, &user, "status = ? AND created_at > ?", nil, "ACTIVE", time.Now().AddDate(0, -1, 0))
 ```
 
 #### Find Single Record (with Preloads)
@@ -101,13 +104,16 @@ var user User
 preloads := []string{"Profile", "Orders"}
 found, err := db.FindOne(ctx, &user, map[string]interface{}{
     "email": "john@example.com",
-}, preloads)
+}, &preloads)
 if err != nil {
     // Handle error
 }
 if !found {
     // Record not found
 }
+
+// With string conditions, preloads and arguments
+found, err := db.FindOne(ctx, &user, "status = ? AND verified = ?", &preloads, "ACTIVE", true)
 ```
 
 #### Find Multiple Records
@@ -125,6 +131,9 @@ options := &database.QueryOptions{
 err := db.FindMany(ctx, &users, map[string]interface{}{
     "active": true,
 }, options)
+
+// With string conditions and arguments
+err := db.FindMany(ctx, &users, "status = ? AND created_at > ?", options, "ACTIVE", time.Now().AddDate(0, -1, 0))
 ```
 
 #### Count Records
@@ -138,9 +147,7 @@ activeUsers, err := db.Count(ctx, &User{}, "status <> ? AND created_at > ?", "IN
 
 ### Query Conditions
 
-The `conditions` parameter supports multiple formats for flexible querying. Currently available in `Count()` and `Update()` functions, with planned migration to all Find operations.
-
-> **Note**: Advanced condition support with placeholders is implemented for `Count()` and `Update()`. Future versions will extend this functionality to `FindOne()`, `FindMany()`, and other query operations.
+The `conditions` parameter supports multiple formats for flexible querying. This functionality is now available in all query operations: `FindOne()`, `FindMany()`, `Count()`, and `Update()`.
 
 #### Map Conditions (Equality only)
 ```go
@@ -172,6 +179,14 @@ conditions := map[string]interface{}{
 
 #### Common Examples
 ```go
+// FindOne examples
+db.FindOne(ctx, &user, "status <> ?", nil, "INACTIVE")
+db.FindOne(ctx, &user, "email LIKE ?", nil, "%@gmail.com")
+
+// FindMany examples
+db.FindMany(ctx, &users, "status = ? AND created_at > ?", options, "ACTIVE", time.Now().AddDate(0, -1, 0))
+db.FindMany(ctx, &orders, "amount BETWEEN ? AND ?", options, 100.0, 1000.0)
+
 // Count examples
 db.Count(ctx, &Order{}, "status <> ?", "CANCELLED")
 db.Count(ctx, &Order{}, "amount BETWEEN ? AND ?", 100.0, 1000.0)
@@ -182,12 +197,16 @@ db.Update(ctx, &order, updates, "status = ? AND version = ?", "PENDING", 5)
 
 // IN operator with slice
 statuses := []string{"PENDING", "PROCESSING"}
+db.FindMany(ctx, &orders, "status IN ?", options, statuses)
 db.Count(ctx, &Order{}, "status IN ?", statuses)
 
 // Pattern matching
+db.FindOne(ctx, &user, "email LIKE ?", nil, "%@gmail.com")
 db.Count(ctx, &User{}, "email LIKE ?", "%@gmail.com")
 
 // Complex conditions
+db.FindMany(ctx, &orders, "status <> ? AND amount > ? AND created_at > ?", options,
+    "CANCELLED", 100.0, time.Now().AddDate(0, -1, 0))
 db.Count(ctx, &Order{}, "status <> ? AND amount > ? AND created_at > ?", 
     "CANCELLED", 100.0, time.Now().AddDate(0, -1, 0))
 ```
