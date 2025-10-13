@@ -6,18 +6,20 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/juanMaAV92/go-utils/log"
 	"gorm.io/gorm"
 )
 
 const (
 	// Database operation steps for logging
-	createStep    = "creating record"
-	updateStep    = "updating record"
-	findOneStep   = "finding single record"
-	findManyStep  = "finding multiple records"
-	countStep     = "counting records"
-	joinQueryStep = "executing join query"
-	rawQueryStep  = "executing raw query"
+	createStep      = "creating record"
+	updateStep      = "updating record"
+	findOneStep     = "finding single record"
+	findManyStep    = "finding multiple records"
+	countStep       = "counting records"
+	joinQueryStep   = "executing join query"
+	rawQueryStep    = "executing raw query"
+	transactionStep = "executing transaction"
 )
 
 // Create inserts a new record into the database
@@ -35,7 +37,7 @@ func (db *Database) Create(ctx context.Context, destination interface{}) (err er
 
 	tx := db.instance.WithContext(ctx).Create(destination)
 	if tx.Error != nil {
-		err = handleDatabaseError(ctx, db.logger, tx.Error, createStep, "Failed to create record")
+		err = handleDatabaseError(ctx, db.logger, tx.Error, createStep, msgFailedToCreateRecord)
 		return
 	}
 
@@ -78,7 +80,7 @@ func (db *Database) Update(ctx context.Context, model interface{}, updates map[s
 
 	tx = tx.Updates(updates)
 	if tx.Error != nil {
-		err = handleDatabaseError(ctx, db.logger, tx.Error, updateStep, "Failed to update record")
+		err = handleDatabaseError(ctx, db.logger, tx.Error, updateStep, msgFailedToUpdateRecord)
 		return
 	}
 
@@ -128,7 +130,7 @@ func (db *Database) FindOne(ctx context.Context, destination interface{}, condit
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
-		err = handleDatabaseError(ctx, db.logger, tx.Error, findOneStep, "Failed to find record")
+		err = handleDatabaseError(ctx, db.logger, tx.Error, findOneStep, msgFailedToFindRecord)
 		return
 	}
 
@@ -167,7 +169,7 @@ func (db *Database) FindMany(ctx context.Context, destination interface{}, condi
 	}
 
 	if err = tx.Find(destination).Error; err != nil {
-		err = handleDatabaseError(ctx, db.logger, err, findManyStep, "Failed to find records")
+		err = handleDatabaseError(ctx, db.logger, err, findManyStep, msgFailedToFindRecords)
 		return
 	}
 
@@ -200,7 +202,7 @@ func (db *Database) Count(ctx context.Context, model interface{}, conditions int
 	}
 
 	if err = tx.Count(&totalRecords).Error; err != nil {
-		err = handleDatabaseError(ctx, db.logger, err, countStep, "Failed to count records")
+		err = handleDatabaseError(ctx, db.logger, err, countStep, msgFailedToCountRecords)
 		return
 	}
 
@@ -234,7 +236,7 @@ func (db *Database) FindWithJoins(ctx context.Context, destination interface{}, 
 	tx = applyJoinOptions(tx, config)
 
 	if err = tx.Find(destination).Error; err != nil {
-		err = handleDatabaseError(ctx, db.logger, err, joinQueryStep, "Failed to execute join query")
+		err = handleDatabaseError(ctx, db.logger, err, joinQueryStep, msgFailedToExecuteJoinQuery)
 		return
 	}
 
@@ -266,7 +268,7 @@ func (db *Database) ExecuteRawQuery(ctx context.Context, destination interface{}
 		// For non-SELECT queries (INSERT, UPDATE, DELETE)
 		tx = db.instance.WithContext(ctx).Exec(query, args...)
 		if tx.Error != nil {
-			err = handleDatabaseError(ctx, db.logger, tx.Error, rawQueryStep, "Failed to execute raw query")
+			err = handleDatabaseError(ctx, db.logger, tx.Error, rawQueryStep, msgFailedToExecuteRawQuery)
 			return
 		}
 		result.RowsAffected = tx.RowsAffected
@@ -279,7 +281,7 @@ func (db *Database) ExecuteRawQuery(ctx context.Context, destination interface{}
 
 		tx = db.instance.WithContext(ctx).Raw(query, args...).Scan(destination)
 		if tx.Error != nil {
-			err = handleDatabaseError(ctx, db.logger, tx.Error, rawQueryStep, "Failed to execute raw query")
+			err = handleDatabaseError(ctx, db.logger, tx.Error, rawQueryStep, msgFailedToExecuteRawQuery)
 			return
 		}
 		result.RowsAffected = tx.RowsAffected
@@ -289,22 +291,84 @@ func (db *Database) ExecuteRawQuery(ctx context.Context, destination interface{}
 	return
 }
 
+// WithTransaction executes a function within a database transaction
+// Parameters:
+//   - ctx: Request context for cancellation and timeouts
+//   - fn: Function to execute within the transaction
+//
+// The transaction is automatically committed if the function returns nil,
+// or rolled back if the function returns an error or panics.
+func (db *Database) WithTransaction(ctx context.Context, fn TransactionFunc) (err error) {
+	if err = validateContext(ctx); err != nil {
+		return
+	}
+
+	if fn == nil {
+		err = newTransactionFunctionRequiredError()
+		return
+	}
+
+	// Begin transaction
+	tx := db.instance.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		err = handleDatabaseError(ctx, db.logger, tx.Error, transactionStep, msgFailedToBeginTransaction)
+		return
+	}
+
+	// Create a new Database instance that uses the transaction
+	txDB := &Database{
+		instance: tx,
+		logger:   db.logger,
+	}
+
+	// Handle panics and ensure rollback
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			if recoverErr, ok := r.(error); ok {
+				err = recoverErr
+			} else {
+				err = newTransactionPanicError(r)
+			}
+			return
+		}
+
+		if err != nil {
+			// Rollback on error
+			if rollbackErr := tx.Rollback().Error; rollbackErr != nil {
+				db.logger.Error(ctx, transactionStep, msgFailedToRollbackTransaction,
+					log.Field("original_error", err.Error()),
+					log.Field("rollback_error", rollbackErr.Error()))
+			}
+		} else {
+			// Commit on success
+			if commitErr := tx.Commit().Error; commitErr != nil {
+				err = handleDatabaseError(ctx, db.logger, commitErr, transactionStep, msgFailedToCommitTransaction)
+			}
+		}
+	}()
+
+	// Execute the transaction function
+	err = fn(txDB)
+	return
+}
+
 // Validation methods for consistent parameter checking
 
 func validateContext(ctx context.Context) error {
 	if ctx == nil {
-		return errors.New(errContextRequired)
+		return newContextRequiredError()
 	}
 	return nil
 }
 
 func validateDestination(destination interface{}) error {
 	if destination == nil {
-		return errors.New(errDestinationRequired)
+		return newDestinationRequiredError()
 	}
 
 	if reflect.TypeOf(destination).Kind() != reflect.Ptr {
-		return errors.New(errDestinationMustBePointer)
+		return newDestinationMustBePointerError()
 	}
 
 	return nil
@@ -312,25 +376,25 @@ func validateDestination(destination interface{}) error {
 
 func validateModel(model interface{}) error {
 	if model == nil {
-		return errors.New(errModelRequired)
+		return newModelRequiredError()
 	}
 	return nil
 }
 
 func validateUpdates(updates map[string]interface{}) error {
 	if len(updates) == 0 {
-		return errors.New(errUpdatesRequired)
+		return newUpdatesRequiredError()
 	}
 	return nil
 }
 
 func validateJoinConfig(config JoinConfig) error {
 	if config.BaseTable == "" {
-		return errors.New(errBaseTableRequired)
+		return newBaseTableRequiredError()
 	}
 
 	if len(config.Joins) == 0 {
-		return errors.New(errJoinsRequired)
+		return newJoinsRequiredError()
 	}
 
 	return nil
@@ -338,7 +402,7 @@ func validateJoinConfig(config JoinConfig) error {
 
 func validateQuery(query string) error {
 	if query == "" {
-		return errors.New(errQueryRequired)
+		return newQueryRequiredError()
 	}
 	return nil
 }

@@ -12,12 +12,16 @@ This package provides a high-level database abstraction layer built on top of GO
 - **Validation**: Comprehensive parameter validation
 - **Context Support**: All operations support context for cancellation and timeouts
 - **Logging**: Integrated logging with configurable levels
+- **Transactions**: Safe transaction management with automatic commit/rollback
+- **Advanced Conditions**: Support for placeholders and arguments in all query operations
+- **Named Returns**: Self-documenting function returns for better IDE experience
 
 ## Main Files
 
-- `database.go`: Core database operations (Create, Update, FindOne, FindMany, Count, etc.)
+- `database.go`: Core database operations (Create, Update, FindOne, FindMany, Count, WithTransaction, etc.)
 - `config.go`: Connection configuration and initialization
-- `model.go`: Data models and configuration structures
+- `model.go`: Data models, configuration structures, and type definitions
+- `errorHandler.go`: Centralized error handling and user-friendly error messages
 - `database_test.go`: Unit tests for validation logic
 
 ## Configuration
@@ -145,6 +149,87 @@ totalUsers, err := db.Count(ctx, &User{}, nil)
 activeUsers, err := db.Count(ctx, &User{}, "status <> ? AND created_at > ?", "INACTIVE", time.Now().AddDate(0, -1, 0))
 ```
 
+### Transactions
+
+The package provides safe transaction management with automatic commit/rollback functionality.
+
+#### Basic Transaction Usage
+```go
+err := db.WithTransaction(ctx, func(tx *Database) error {
+    // Create user
+    user := &User{Name: "Juan", Email: "juan@example.com"}
+    if err := tx.Create(ctx, user); err != nil {
+        return err // Automatic rollback
+    }
+    
+    // Create profile
+    profile := &Profile{UserID: user.ID, Bio: "Developer"}
+    if err := tx.Create(ctx, profile); err != nil {
+        return err // Automatic rollback
+    }
+    
+    return nil // Automatic commit
+})
+if err != nil {
+    // Handle transaction error
+}
+```
+
+#### Complex Transaction Example
+```go
+// Bank transfer with transaction safety
+err := db.WithTransaction(ctx, func(tx *Database) error {
+    // Debit from source account
+    updates := map[string]interface{}{"balance": gorm.Expr("balance - ?", amount)}
+    rowsAffected, err := tx.Update(ctx, &fromAccount, updates, 
+        "id = ? AND balance >= ?", fromID, amount)
+    if err != nil {
+        return err
+    }
+    if rowsAffected == 0 {
+        return errors.New("insufficient funds")
+    }
+    
+    // Credit to destination account
+    updates = map[string]interface{}{"balance": gorm.Expr("balance + ?", amount)}
+    _, err = tx.Update(ctx, &toAccount, updates, "id = ?", toID)
+    if err != nil {
+        return err
+    }
+    
+    // Create transaction record
+    txRecord := &Transaction{FromID: fromID, ToID: toID, Amount: amount}
+    return tx.Create(ctx, txRecord)
+})
+```
+
+#### Transaction with Raw SQL
+```go
+err := db.WithTransaction(ctx, func(tx *Database) error {
+    // Update inventory
+    result, err := tx.ExecuteRawQuery(ctx, nil, 
+        "UPDATE inventory SET quantity = quantity - ? WHERE product_id = ? AND quantity >= ?", 
+        quantity, productID, quantity)
+    if err != nil {
+        return err
+    }
+    if result.RowsAffected == 0 {
+        return errors.New("insufficient inventory")
+    }
+    
+    // Create order
+    order := &Order{ProductID: productID, Quantity: quantity}
+    return tx.Create(ctx, order)
+})
+```
+
+**Transaction Features:**
+- **Automatic Rollback**: On any error or panic
+- **Automatic Commit**: When function returns nil
+- **Panic Recovery**: Converts panics to errors with rollback
+- **Nested Operations**: All database operations work within transactions
+- **Context Support**: Full context propagation and cancellation
+
 ### Query Conditions
 
 The `conditions` parameter supports multiple formats for flexible querying. This functionality is now available in all query operations: `FindOne()`, `FindMany()`, `Count()`, and `Update()`.
@@ -237,7 +322,11 @@ err := db.FindWithJoins(ctx, &results, config)
 ```
 
 #### Raw SQL Queries
+
+The `ExecuteRawQuery` method now returns detailed information about query results.
+
 ```go
+// SELECT queries with result information
 var results []CustomResult
 query := `
     SELECT u.name, COUNT(o.id) as order_count 
@@ -246,17 +335,69 @@ query := `
     WHERE u.created_at > ? 
     GROUP BY u.id, u.name
 `
-err := db.ExecuteRawQuery(ctx, &results, query, time.Now().AddDate(0, -1, 0))
+result, err := db.ExecuteRawQuery(ctx, &results, query, time.Now().AddDate(0, -1, 0))
+if err != nil {
+    // Handle error
+}
+
+if result.Found {
+    fmt.Printf("Found %d users with orders\n", result.RowsAffected)
+    // Process results...
+} else {
+    fmt.Println("No users found")
+}
 ```
+
+```go
+// INSERT/UPDATE/DELETE queries with affected rows
+result, err := db.ExecuteRawQuery(ctx, nil, 
+    "UPDATE users SET last_login = NOW() WHERE status = ?", "ACTIVE")
+if err != nil {
+    // Handle error
+}
+
+fmt.Printf("Updated %d users\n", result.RowsAffected)
+```
+
+**QueryResult Structure:**
+```go
+type QueryResult struct {
+    RowsAffected int64 `json:"rows_affected"` // Number of rows affected/found
+    Found        bool  `json:"found"`         // Whether any records were found/affected
+}
+```
+
+## Named Returns & Autodocumentation
+
+All functions use named returns for better IDE experience and self-documenting code:
+
+```go
+// Instead of generic types, you get descriptive names
+rowsAffected, err := db.Update(...)     // Clear: number of affected rows
+found, err := db.FindOne(...)           // Clear: whether record was found  
+totalRecords, err := db.Count(...)      // Clear: total count of records
+result, err := db.ExecuteRawQuery(...)  // Clear: detailed query result
+```
+
+**Benefits:**
+- **Better IDE Support**: IntelliSense shows descriptive parameter names
+- **Self-Documenting**: Code is more readable without additional comments
+- **Type Safety**: Same functionality with improved developer experience
 
 ## Error Handling
 
-The package provides user-friendly error messages for common PostgreSQL errors:
+The package provides user-friendly error messages for common PostgreSQL errors with centralized error management:
 
 - **Unique Violation (23505)**: "A record with the same values already exists"
 - **Check Violation (23514)**: "The provided data violates database constraints"
 - **Foreign Key Violation (23503)**: "Invalid reference in the provided data"
 - **Generic Errors**: "An unexpected database error occurred"
+
+**Error Management Features:**
+- **Centralized Error Functions**: All errors are created through dedicated functions
+- **Consistent Messaging**: No magic strings, all error messages are constants
+- **Maintainable**: Easy to update error messages from a single location
+- **Localization Ready**: Structured for future internationalization support
 
 ## Migration Support
 
@@ -288,6 +429,35 @@ The package includes comprehensive unit tests for validation logic. Run tests wi
 ```bash
 go test ./database
 ```
+
+## Recent Updates
+
+### Version 2.0 Features
+
+**🔄 Transactions Support**
+- Added `WithTransaction()` method with automatic commit/rollback
+- Panic recovery and error handling
+- Full context support and operation compatibility
+
+**📊 Enhanced Raw SQL Queries**
+- `ExecuteRawQuery()` now returns `QueryResult` with detailed information
+- Support for both SELECT and non-SELECT queries
+- Clear indication of rows affected and records found
+
+**🏷️ Named Returns**
+- All functions now use descriptive named returns
+- Better IDE experience with IntelliSense
+- Self-documenting code without additional comments
+
+**⚡ Advanced Query Conditions**
+- Extended placeholder support to `FindOne()` and `FindMany()`
+- Consistent argument handling across all query methods
+- Enhanced flexibility for complex conditions
+
+**🛠️ Centralized Error Management**
+- Eliminated magic strings throughout the codebase
+- Centralized error creation functions
+- Improved maintainability and consistency
 
 ## License
 
