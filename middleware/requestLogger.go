@@ -127,11 +127,18 @@ func Logging(logger log.Logger) echo.MiddlewareFunc {
 				logData["response_body"] = responseBody
 			}
 
-			// Single log entry with all information
-			if err != nil {
-				logger.Error(req.Context(), "HTTP request completed with error", err.Error(), log.Fields(logData))
-			} else {
+			// Log based on HTTP status code (2xx = success) rather than handler error
+			// A handler may return an error for internal logging/tracing while still
+			// responding successfully. The HTTP status code is the source of truth.
+			isSuccessful := statusCode >= 200 && statusCode < 300
+			if isSuccessful {
 				logger.Info(req.Context(), "HTTP request completed", "success request", log.Fields(logData))
+			} else {
+				errorMsg := "HTTP request failed"
+				if err != nil {
+					errorMsg = err.Error()
+				}
+				logger.Error(req.Context(), "HTTP request completed with error", errorMsg, log.Fields(logData))
 			}
 
 			return err
