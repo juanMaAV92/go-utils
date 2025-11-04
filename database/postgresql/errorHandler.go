@@ -14,6 +14,7 @@ const (
 	errContextRequired          = "context is required"
 	errDestinationRequired      = "destination is required"
 	errDestinationMustBePointer = "destination must be a pointer"
+	errDestinationMustBeSlice   = "destination must be a pointer to a slice"
 	errModelRequired            = "model is required"
 	errUpdatesRequired          = "updates are required"
 	errQueryRequired            = "query is required"
@@ -26,22 +27,23 @@ const (
 	pgForeignKeyViolation = "23503"
 
 	// User-friendly error messages
-	msgDuplicateRecord             = "a record with the same values already exists"
-	msgConstraintViolation         = "the provided data violates database constraints"
-	msgInvalidReference            = "invalid reference in the provided data"
-	msgDatabaseError               = "an unexpected database error occurred"
-	msgTransactionFunctionRequired = "transaction function is required"
-	msgFailedToCreateRecord        = "Failed to create record"
-	msgFailedToUpdateRecord        = "Failed to update record"
-	msgFailedToFindRecord          = "Failed to find record"
-	msgFailedToFindRecords         = "Failed to find records"
-	msgFailedToCountRecords        = "Failed to count records"
-	msgFailedToExecuteJoinQuery    = "Failed to execute join query"
-	msgFailedToExecuteRawQuery     = "Failed to execute raw query"
-	msgFailedToBeginTransaction    = "Failed to begin transaction"
-	msgFailedToCommitTransaction   = "Failed to commit transaction"
-	msgFailedToRollbackTransaction = "Failed to rollback transaction"
-	msgTransactionPanic            = "transaction panic: %v"
+	msgDuplicateRecord              = "a record with the same values already exists"
+	msgConstraintViolation          = "the provided data violates database constraints"
+	msgInvalidReference             = "invalid reference in the provided data"
+	msgDatabaseError                = "an unexpected database error occurred"
+	msgTransactionFunctionRequired  = "transaction function is required"
+	msgFailedToCreateRecord         = "Failed to create record"
+	msgFailedToCreateMassiveRecords = "Failed to create multiple records"
+	msgFailedToUpdateRecord         = "Failed to update record"
+	msgFailedToFindRecord           = "Failed to find record"
+	msgFailedToFindRecords          = "Failed to find records"
+	msgFailedToCountRecords         = "Failed to count records"
+	msgFailedToExecuteJoinQuery     = "Failed to execute join query"
+	msgFailedToExecuteRawQuery      = "Failed to execute raw query"
+	msgFailedToBeginTransaction     = "Failed to begin transaction"
+	msgFailedToCommitTransaction    = "Failed to commit transaction"
+	msgFailedToRollbackTransaction  = "Failed to rollback transaction"
+	msgTransactionPanic             = "transaction panic: %v"
 )
 
 // Error creation functions
@@ -55,6 +57,10 @@ func newDestinationRequiredError() error {
 
 func newDestinationMustBePointerError() error {
 	return errors.New(errDestinationMustBePointer)
+}
+
+func newDestinationMustBeSliceError() error {
+	return errors.New(errDestinationMustBeSlice)
 }
 
 func newModelRequiredError() error {

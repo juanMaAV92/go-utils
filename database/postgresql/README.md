@@ -8,6 +8,7 @@ This package provides a high-level database abstraction layer built on top of GO
 - **Automatic Migrations**: Built-in migration support using golang-migrate
 - **Error Handling**: User-friendly error messages with PostgreSQL error code mapping
 - **Query Builder**: Support for complex queries including JOINs and raw SQL
+- **Bulk Operations**: Efficient bulk insert with configurable batch sizes
 - **Pagination**: Built-in pagination support
 - **Validation**: Comprehensive parameter validation
 - **Context Support**: All operations support context for cancellation and timeouts
@@ -18,7 +19,7 @@ This package provides a high-level database abstraction layer built on top of GO
 
 ## Main Files
 
-- `database.go`: Core database operations (Create, Update, FindOne, FindMany, Count, WithTransaction, etc.)
+- `database.go`: Core database operations (Create, CreateMassive, Update, FindOne, FindMany, Count, WithTransaction, etc.)
 - `config.go`: Connection configuration and initialization
 - `model.go`: Data models, configuration structures, and type definitions
 - `errorHandler.go`: Centralized error handling and user-friendly error messages
@@ -65,6 +66,41 @@ if err != nil {
     // Handle error
 }
 ```
+
+#### Create Multiple Records (Bulk Insert)
+```go
+users := []User{
+    {Name: "John Doe", Email: "john@example.com"},
+    {Name: "Jane Smith", Email: "jane@example.com"},
+    {Name: "Bob Wilson", Email: "bob@example.com"},
+}
+
+// Insert in batches of 100 (default batch size)
+rowsAffected, err := db.CreateMassive(ctx, &users, 100)
+if err != nil {
+    // Handle error
+}
+fmt.Printf("Created %d users\n", rowsAffected)
+
+// Use default batch size by passing 0 or negative value
+rowsAffected, err := db.CreateMassive(ctx, &users, 0)
+
+// Custom batch size for large datasets
+rowsAffected, err := db.CreateMassive(ctx, &users, 500)
+```
+
+**CreateMassive Features:**
+- **Batch Processing**: Inserts records in configurable batch sizes for optimal performance
+- **Default Batch Size**: Uses 100 records per batch if not specified (0 or negative)
+- **Generated Values**: Auto-populated fields (IDs, timestamps) are updated in the slice
+- **Transaction Safety**: All batches are inserted within a single transaction
+- **Performance**: Significantly faster than individual Create() calls for large datasets
+
+**When to Use:**
+- Importing data from external sources
+- Seeding databases with test data
+- Processing bulk operations efficiently
+- Any scenario requiring insertion of multiple records
 
 #### Update Records
 ```go
@@ -431,6 +467,14 @@ go test ./database
 ```
 
 ## Recent Updates
+
+### Version 2.1 Features
+
+**🚀 Bulk Insert Support**
+- Added `CreateMassive()` method for efficient bulk insertions
+- Configurable batch sizes with smart defaults
+- Transaction safety for all batch operations
+- Optimal performance for large datasets
 
 ### Version 2.0 Features
 

@@ -12,14 +12,15 @@ import (
 
 const (
 	// Database operation steps for logging
-	createStep      = "creating record"
-	updateStep      = "updating record"
-	findOneStep     = "finding single record"
-	findManyStep    = "finding multiple records"
-	countStep       = "counting records"
-	joinQueryStep   = "executing join query"
-	rawQueryStep    = "executing raw query"
-	transactionStep = "executing transaction"
+	createStep        = "creating record"
+	createMassiveStep = "creating multiple records"
+	updateStep        = "updating record"
+	findOneStep       = "finding single record"
+	findManyStep      = "finding multiple records"
+	countStep         = "counting records"
+	joinQueryStep     = "executing join query"
+	rawQueryStep      = "executing raw query"
+	transactionStep   = "executing transaction"
 )
 
 // Create inserts a new record into the database
@@ -41,6 +42,42 @@ func (db *Database) Create(ctx context.Context, destination interface{}) (err er
 		return
 	}
 
+	return
+}
+
+// CreateMassive inserts multiple records into the database in batches
+// Parameters:
+//   - ctx: Request context for cancellation and timeouts
+//   - destination: Pointer to slice of structs to be created (will be populated with generated values)
+//   - batchSize: Number of records to insert per batch (default: 100 if value is 0 or negative)
+//
+// Returns:
+//   - int64: Number of records that were actually created
+//   - error: Any database error that occurred
+func (db *Database) CreateMassive(ctx context.Context, destination interface{}, batchSize int) (rowsAffected int64, err error) {
+	if err = validateContext(ctx); err != nil {
+		return
+	}
+
+	if err = validateDestination(destination); err != nil {
+		return
+	}
+
+	if err = validateSlice(destination); err != nil {
+		return
+	}
+
+	if batchSize <= 0 {
+		batchSize = 100
+	}
+
+	tx := db.instance.WithContext(ctx).CreateInBatches(destination, batchSize)
+	if tx.Error != nil {
+		err = handleDatabaseError(ctx, db.logger, tx.Error, createMassiveStep, msgFailedToCreateMassiveRecords)
+		return
+	}
+
+	rowsAffected = tx.RowsAffected
 	return
 }
 
@@ -404,6 +441,20 @@ func validateQuery(query string) error {
 	if query == "" {
 		return newQueryRequiredError()
 	}
+	return nil
+}
+
+func validateSlice(destination interface{}) error {
+	destType := reflect.TypeOf(destination)
+	if destType.Kind() != reflect.Ptr {
+		return newDestinationMustBePointerError()
+	}
+
+	elemType := destType.Elem()
+	if elemType.Kind() != reflect.Slice {
+		return newDestinationMustBeSliceError()
+	}
+
 	return nil
 }
 
