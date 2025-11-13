@@ -21,3 +21,10 @@ func FirstNotNilOrEmptyString(values ...*string) *string {
 	}
 	return nil
 }
+
+func StringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
