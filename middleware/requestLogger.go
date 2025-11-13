@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
+	customErrors "github.com/juanMaAV92/go-utils/errors"
 	"github.com/juanMaAV92/go-utils/log"
 )
 
@@ -70,24 +72,45 @@ func Logging(logger log.Logger) echo.MiddlewareFunc {
 				}
 			}
 
-			// Setup custom response writer to capture response body
+			// Setup custom response writer to capture response body and status code
 			resBodyBuffer := new(bytes.Buffer)
 			customWriter := &CustomResponseWriter{
 				Writer:         io.MultiWriter(res.Writer, resBodyBuffer),
 				ResponseWriter: res.Writer,
+				statusCode:     http.StatusOK, // Default status code
 			}
 			res.Writer = customWriter
 
-			// Process request
-			err := next(c)
+			// Process request and store error for later logging
+			var returnErr error
+			func() {
+				defer func() {
+					// This recovers from panics and captures them
+					if r := recover(); r != nil {
+						returnErr = echo.NewHTTPError(http.StatusInternalServerError, "Internal Server Error")
+						panic(r)
+					}
+				}()
+				returnErr = next(c)
+			}()
 
 			// Calculate duration
 			duration := time.Since(start)
 
-			// Get response status code
+			// Get response status code - Priority: customWriter > response > error > default to 200
 			statusCode := customWriter.statusCode
 			if statusCode == 0 {
-				statusCode = res.Status
+				statusCode = http.StatusOK
+			}
+			// If response was already written by the error handler, get actual status
+			if statusCode == http.StatusOK && returnErr != nil {
+				// Try to extract HTTP error code from custom ErrorResponse
+				var customErr *customErrors.ErrorResponse
+				if errors.As(returnErr, &customErr) {
+					statusCode = customErr.ErrorHTTPCode()
+				} else if he, ok := returnErr.(*echo.HTTPError); ok {
+					statusCode = he.Code
+				}
 			}
 
 			// Get response body
@@ -97,12 +120,12 @@ func Logging(logger log.Logger) echo.MiddlewareFunc {
 			if span.IsRecording() {
 				span.SetAttributes(
 					attribute.Int("http.status_code", statusCode),
-					attribute.Int64("http.response_size", res.Size),
+					attribute.Int64("http.response_size", int64(len(responseBody))),
 					attribute.String("http.duration", duration.String()),
 				)
 
-				if err != nil {
-					span.SetAttributes(attribute.String("error.message", err.Error()))
+				if returnErr != nil {
+					span.SetAttributes(attribute.String("error.message", returnErr.Error()))
 				}
 			}
 
@@ -113,7 +136,7 @@ func Logging(logger log.Logger) echo.MiddlewareFunc {
 				"remote_ip":     c.RealIP(),
 				"user_agent":    req.UserAgent(),
 				"status_code":   statusCode,
-				"response_size": res.Size,
+				"response_size": len(responseBody),
 				"duration":      duration.String(),
 			}
 
@@ -135,13 +158,13 @@ func Logging(logger log.Logger) echo.MiddlewareFunc {
 				logger.Info(req.Context(), "HTTP request completed", "success request", log.Fields(logData))
 			} else {
 				errorMsg := "HTTP request failed"
-				if err != nil {
-					errorMsg = err.Error()
+				if returnErr != nil {
+					errorMsg = returnErr.Error()
 				}
 				logger.Error(req.Context(), "HTTP request completed with error", errorMsg, log.Fields(logData))
 			}
 
-			return err
+			return returnErr
 		}
 	}
 }
