@@ -192,7 +192,9 @@ func TestValidate_SliceMultipleErrors(t *testing.T) {
 // ---- Singleton test ----
 
 func TestNew_ReturnsSingleton(t *testing.T) {
-	if New() != New() {
+	a := New()
+	b := New()
+	if a != b {
 		t.Error("New() should return the same instance")
 	}
 }

@@ -20,9 +20,6 @@ func TestNew(t *testing.T) {
 
 func TestErrorInterface(t *testing.T) {
 	var err error = ErrNotFound()
-	if err == nil {
-		t.Fatal("ErrorResponse should implement error")
-	}
 	if err.Error() == "" {
 		t.Error("Error() should return non-empty string")
 	}

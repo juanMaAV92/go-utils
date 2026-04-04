@@ -12,8 +12,7 @@ import (
 
 func TestGetEnv(t *testing.T) {
 	t.Run("returns value", func(t *testing.T) {
-		os.Setenv("TEST_KEY", "hello")
-		defer os.Unsetenv("TEST_KEY")
+		t.Setenv("TEST_KEY", "hello")
 		if got := env.GetEnv("TEST_KEY"); got != "hello" {
 			t.Errorf("got %q, want \"hello\"", got)
 		}
@@ -29,8 +28,7 @@ func TestGetEnv(t *testing.T) {
 	})
 
 	t.Run("panics when blank", func(t *testing.T) {
-		os.Setenv("BLANK_VAR", "   ")
-		defer os.Unsetenv("BLANK_VAR")
+		t.Setenv("BLANK_VAR", "   ")
 		defer func() {
 			if r := recover(); r == nil {
 				t.Error("expected panic for blank value")
@@ -42,15 +40,14 @@ func TestGetEnv(t *testing.T) {
 
 func TestGetEnvWithDefault(t *testing.T) {
 	t.Run("returns value when set", func(t *testing.T) {
-		os.Setenv("K", "v")
-		defer os.Unsetenv("K")
+		t.Setenv("K", "v")
 		if got := env.GetEnvWithDefault("K", "default"); got != "v" {
 			t.Errorf("got %q, want \"v\"", got)
 		}
 	})
 
 	t.Run("returns default when unset", func(t *testing.T) {
-		os.Unsetenv("K")
+		_ = os.Unsetenv("K")
 		if got := env.GetEnvWithDefault("K", "default"); got != "default" {
 			t.Errorf("got %q, want \"default\"", got)
 		}
@@ -59,15 +56,14 @@ func TestGetEnvWithDefault(t *testing.T) {
 
 func TestGetEnvironment(t *testing.T) {
 	t.Run("returns ENVIRONMENT value", func(t *testing.T) {
-		os.Setenv("ENVIRONMENT", "production")
-		defer os.Unsetenv("ENVIRONMENT")
+		t.Setenv("ENVIRONMENT", "production")
 		if got := env.GetEnvironment(); got != "production" {
 			t.Errorf("got %q, want \"production\"", got)
 		}
 	})
 
 	t.Run("defaults to local", func(t *testing.T) {
-		os.Unsetenv("ENVIRONMENT")
+		_ = os.Unsetenv("ENVIRONMENT")
 		if got := env.GetEnvironment(); got != "local" {
 			t.Errorf("got %q, want \"local\"", got)
 		}
@@ -76,23 +72,21 @@ func TestGetEnvironment(t *testing.T) {
 
 func TestGetEnvAsIntWithDefault(t *testing.T) {
 	t.Run("returns parsed int", func(t *testing.T) {
-		os.Setenv("N", "42")
-		defer os.Unsetenv("N")
+		t.Setenv("N", "42")
 		if got := env.GetEnvAsIntWithDefault("N", 0); got != 42 {
 			t.Errorf("got %d, want 42", got)
 		}
 	})
 
 	t.Run("returns default when unset", func(t *testing.T) {
-		os.Unsetenv("N")
+		_ = os.Unsetenv("N")
 		if got := env.GetEnvAsIntWithDefault("N", 99); got != 99 {
 			t.Errorf("got %d, want 99", got)
 		}
 	})
 
 	t.Run("panics on invalid int", func(t *testing.T) {
-		os.Setenv("N", "nope")
-		defer os.Unsetenv("N")
+		t.Setenv("N", "nope")
 		defer func() {
 			if r := recover(); r == nil {
 				t.Error("expected panic")
@@ -104,23 +98,21 @@ func TestGetEnvAsIntWithDefault(t *testing.T) {
 
 func TestGetEnvAsDurationWithDefault(t *testing.T) {
 	t.Run("returns parsed duration", func(t *testing.T) {
-		os.Setenv("D", "5m")
-		defer os.Unsetenv("D")
+		t.Setenv("D", "5m")
 		if got := env.GetEnvAsDurationWithDefault("D", time.Second); got != 5*time.Minute {
 			t.Errorf("got %v, want 5m", got)
 		}
 	})
 
 	t.Run("returns default when unset", func(t *testing.T) {
-		os.Unsetenv("D")
+		_ = os.Unsetenv("D")
 		if got := env.GetEnvAsDurationWithDefault("D", 30*time.Second); got != 30*time.Second {
 			t.Errorf("got %v, want 30s", got)
 		}
 	})
 
 	t.Run("panics on invalid duration", func(t *testing.T) {
-		os.Setenv("D", "invalid")
-		defer os.Unsetenv("D")
+		t.Setenv("D", "invalid")
 		defer func() {
 			if r := recover(); r == nil {
 				t.Error("expected panic")
@@ -132,10 +124,8 @@ func TestGetEnvAsDurationWithDefault(t *testing.T) {
 
 func TestMustHave(t *testing.T) {
 	t.Run("no panic when all set", func(t *testing.T) {
-		os.Setenv("A", "1")
-		os.Setenv("B", "2")
-		defer os.Unsetenv("A")
-		defer os.Unsetenv("B")
+		t.Setenv("A", "1")
+		t.Setenv("B", "2")
 		defer func() {
 			if r := recover(); r != nil {
 				t.Errorf("unexpected panic: %v", r)
@@ -145,8 +135,8 @@ func TestMustHave(t *testing.T) {
 	})
 
 	t.Run("panics listing all missing vars", func(t *testing.T) {
-		os.Unsetenv("MISSING_X")
-		os.Unsetenv("MISSING_Y")
+		_ = os.Unsetenv("MISSING_X")
+		_ = os.Unsetenv("MISSING_Y")
 		defer func() {
 			r := recover()
 			if r == nil {
@@ -161,9 +151,8 @@ func TestMustHave(t *testing.T) {
 	})
 
 	t.Run("panics only for missing ones", func(t *testing.T) {
-		os.Setenv("PRESENT", "ok")
-		defer os.Unsetenv("PRESENT")
-		os.Unsetenv("ABSENT")
+		t.Setenv("PRESENT", "ok")
+		_ = os.Unsetenv("ABSENT")
 		defer func() {
 			r := recover()
 			if r == nil {
@@ -183,8 +172,7 @@ func TestMustHave(t *testing.T) {
 
 func TestGetEnvAsSliceWithDefault(t *testing.T) {
 	t.Run("splits by separator", func(t *testing.T) {
-		os.Setenv("S", "a,b,c")
-		defer os.Unsetenv("S")
+		t.Setenv("S", "a,b,c")
 		got := env.GetEnvAsSliceWithDefault("S", ",", nil)
 		if len(got) != 3 || got[0] != "a" || got[1] != "b" || got[2] != "c" {
 			t.Errorf("got %v, want [a b c]", got)
@@ -192,8 +180,7 @@ func TestGetEnvAsSliceWithDefault(t *testing.T) {
 	})
 
 	t.Run("trims whitespace from elements", func(t *testing.T) {
-		os.Setenv("S", "a , b , c")
-		defer os.Unsetenv("S")
+		t.Setenv("S", "a , b , c")
 		got := env.GetEnvAsSliceWithDefault("S", ",", nil)
 		for _, v := range got {
 			if v != strings.TrimSpace(v) {
@@ -203,7 +190,7 @@ func TestGetEnvAsSliceWithDefault(t *testing.T) {
 	})
 
 	t.Run("returns default when unset", func(t *testing.T) {
-		os.Unsetenv("S")
+		_ = os.Unsetenv("S")
 		def := []string{"x"}
 		got := env.GetEnvAsSliceWithDefault("S", ",", def)
 		if len(got) != 1 || got[0] != "x" {
@@ -212,8 +199,7 @@ func TestGetEnvAsSliceWithDefault(t *testing.T) {
 	})
 
 	t.Run("excludes empty elements", func(t *testing.T) {
-		os.Setenv("S", "a,,b")
-		defer os.Unsetenv("S")
+		t.Setenv("S", "a,,b")
 		got := env.GetEnvAsSliceWithDefault("S", ",", nil)
 		if len(got) != 2 {
 			t.Errorf("got %v, want [a b] (no empty elements)", got)
@@ -235,8 +221,7 @@ func TestGetEnvAsBoolWithDefault(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.val, func(t *testing.T) {
-			os.Setenv("B", c.val)
-			defer os.Unsetenv("B")
+			t.Setenv("B", c.val)
 			if got := env.GetEnvAsBoolWithDefault("B", !c.want); got != c.want {
 				t.Errorf("val %q: got %v, want %v", c.val, got, c.want)
 			}
@@ -244,15 +229,14 @@ func TestGetEnvAsBoolWithDefault(t *testing.T) {
 	}
 
 	t.Run("returns default when unset", func(t *testing.T) {
-		os.Unsetenv("B")
+		_ = os.Unsetenv("B")
 		if got := env.GetEnvAsBoolWithDefault("B", true); got != true {
 			t.Error("expected default true")
 		}
 	})
 
 	t.Run("panics on invalid bool", func(t *testing.T) {
-		os.Setenv("B", "yes")
-		defer os.Unsetenv("B")
+		t.Setenv("B", "yes")
 		defer func() {
 			if r := recover(); r == nil {
 				t.Error("expected panic")
