@@ -52,7 +52,7 @@ func TestAssertStatus_Fail(t *testing.T) {
 func TestDecodeJSON(t *testing.T) {
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/json")
-	rec.WriteString(`{"name":"alice","age":30}`)
+	_, _ = rec.WriteString(`{"name":"alice","age":30}`)
 
 	var out struct {
 		Name string `json:"name"`
@@ -69,14 +69,14 @@ func TestDecodeJSON(t *testing.T) {
 
 func TestAssertJSONField_Pass(t *testing.T) {
 	rec := httptest.NewRecorder()
-	rec.WriteString(`{"status":"ok","message":"created"}`)
+	_, _ = rec.WriteString(`{"status":"ok","message":"created"}`)
 	httptest2.AssertJSONField(t, rec, "status", "ok")
 }
 
 func TestAssertJSONField_WrongValue(t *testing.T) {
 	inner := &testing.T{}
 	rec := httptest.NewRecorder()
-	rec.WriteString(`{"status":"error"}`)
+	_, _ = rec.WriteString(`{"status":"error"}`)
 	httptest2.AssertJSONField(inner, rec, "status", "ok")
 	if !inner.Failed() {
 		t.Error("expected inner test to fail")
