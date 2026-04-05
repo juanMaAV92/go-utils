@@ -79,7 +79,7 @@ func (s *storage) GetObject(ctx context.Context, req GetObjectRequest) (*GetObje
 }
 
 // PutObject uploads an object to S3 directly from the backend.
-func (s *storage) PutObject(ctx context.Context, req PutObjectRequest) error {
+func (s *storage) PutObject(ctx context.Context, req PutObjectRequest) (*PutObjectResult, error) {
 	ctx, span := s.tracer.Start(ctx, "s3.put_object",
 		trace.WithAttributes(
 			attribute.String("s3.bucket", req.Bucket),
@@ -89,10 +89,10 @@ func (s *storage) PutObject(ctx context.Context, req PutObjectRequest) error {
 	defer span.End()
 
 	if err := validateBucketKey(req.Bucket, req.Key); err != nil {
-		return s.fail(span, err)
+		return nil, s.fail(span, err)
 	}
 	if req.Body == nil {
-		return s.fail(span, fmt.Errorf("s3: body is required"))
+		return nil, s.fail(span, fmt.Errorf("s3: body is required"))
 	}
 
 	input := &awss3.PutObjectInput{
@@ -107,14 +107,16 @@ func (s *storage) PutObject(ctx context.Context, req PutObjectRequest) error {
 		input.Metadata = req.Metadata
 	}
 
-	if _, err := s.client.PutObject(ctx, input); err != nil {
+	out, err := s.client.PutObject(ctx, input)
+	if err != nil {
 		s.logError(ctx, "s3.put_object", "failed to put object", "bucket", req.Bucket, "key", req.Key, "error", err.Error())
-		return s.fail(span, fmt.Errorf("s3: put object: %w", err))
+		return nil, s.fail(span, fmt.Errorf("s3: put object: %w", err))
 	}
 
-	s.logInfo(ctx, "s3.put_object", "object uploaded", "bucket", req.Bucket, "key", req.Key)
+	result := &PutObjectResult{VersionId: derefString(out.VersionId)}
+	s.logInfo(ctx, "s3.put_object", "object uploaded", "bucket", req.Bucket, "key", req.Key, "version_id", result.VersionId)
 	span.SetStatus(codes.Ok, "")
-	return nil
+	return result, nil
 }
 
 // DeleteObject removes an object. Missing keys are silently ignored.

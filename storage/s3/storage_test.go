@@ -118,7 +118,7 @@ func TestPutObject_Success(t *testing.T) {
 		},
 	}, nil)
 
-	err := s.PutObject(ctx, PutObjectRequest{
+	result, err := s.PutObject(ctx, PutObjectRequest{
 		Bucket:      "my-bucket",
 		Key:         "uploads/file.txt",
 		Body:        bytes.NewReader([]byte("data")),
@@ -130,11 +130,31 @@ func TestPutObject_Success(t *testing.T) {
 	if capturedKey != "uploads/file.txt" {
 		t.Errorf("key = %q, want uploads/file.txt", capturedKey)
 	}
+	if result == nil {
+		t.Error("expected non-nil result")
+	}
+}
+
+func TestPutObject_VersionId(t *testing.T) {
+	versionId := "abc123"
+	s := newTestStorage(&mockS3{
+		putObjectFn: func(_ context.Context, _ *awss3.PutObjectInput, _ ...func(*awss3.Options)) (*awss3.PutObjectOutput, error) {
+			return &awss3.PutObjectOutput{VersionId: &versionId}, nil
+		},
+	}, nil)
+
+	result, err := s.PutObject(ctx, PutObjectRequest{Bucket: "b", Key: "k", Body: bytes.NewReader([]byte("data"))})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.VersionId != versionId {
+		t.Errorf("VersionId = %q, want %q", result.VersionId, versionId)
+	}
 }
 
 func TestPutObject_NilBody(t *testing.T) {
 	s := newTestStorage(&mockS3{}, nil)
-	err := s.PutObject(ctx, PutObjectRequest{Bucket: "b", Key: "k", Body: nil})
+	_, err := s.PutObject(ctx, PutObjectRequest{Bucket: "b", Key: "k", Body: nil})
 	if err == nil {
 		t.Error("expected error for nil body")
 	}

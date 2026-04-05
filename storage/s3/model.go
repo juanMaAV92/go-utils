@@ -12,7 +12,8 @@ type Storage interface {
 	GetObject(ctx context.Context, req GetObjectRequest) (*GetObjectResponse, error)
 
 	// PutObject uploads an object directly from the backend.
-	PutObject(ctx context.Context, req PutObjectRequest) error
+	// PutObjectResult.VersionId is populated only if bucket versioning is enabled.
+	PutObject(ctx context.Context, req PutObjectRequest) (*PutObjectResult, error)
 
 	// DeleteObject removes an object. Missing keys are silently ignored.
 	DeleteObject(ctx context.Context, bucket, key string) error
@@ -60,6 +61,11 @@ type ObjectInfo struct {
 	ETag          string
 	LastModified  time.Time
 	Metadata      map[string]string
+}
+
+// PutObjectResult is returned by PutObject.
+type PutObjectResult struct {
+	VersionId string // non-empty only if bucket versioning is enabled
 }
 
 // PresignPutRequest contains parameters for generating a presigned PUT URL.

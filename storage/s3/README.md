@@ -72,13 +72,16 @@ Direct backend upload — use this when the server controls the file content.
 f, _ := os.Open("report.pdf")
 defer f.Close()
 
-err := store.PutObject(ctx, s3.PutObjectRequest{
+result, err := store.PutObject(ctx, s3.PutObjectRequest{
     Bucket:      "my-bucket",
     Key:         "reports/2024/report.pdf",
     Body:        f,
     ContentType: "application/pdf",
     Metadata:    map[string]string{"uploaded-by": "service-a"},
 })
+
+// result.VersionId is non-empty only if bucket versioning is enabled
+fmt.Println(result.VersionId)
 ```
 
 ### DeleteObject
