@@ -86,7 +86,7 @@ func TestAssertJSONField_WrongValue(t *testing.T) {
 func TestAssertJSONField_MissingKey(t *testing.T) {
 	inner := &testing.T{}
 	rec := httptest.NewRecorder()
-	rec.WriteString(`{"other":"value"}`)
+	_, _ = rec.WriteString(`{"other":"value"}`)
 	httptest2.AssertJSONField(inner, rec, "status", "ok")
 	if !inner.Failed() {
 		t.Error("expected inner test to fail for missing key")
