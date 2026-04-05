@@ -22,6 +22,3 @@ go.work.sum
 # OS
 .DS_Store
 
-# Local planning docs (root only)
-/README.md
-/PLAN.md
