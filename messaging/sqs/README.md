@@ -49,12 +49,22 @@ cons, err := consumer.New(client, myProcessor, logger, consCfg, "order-consumer"
 | `VisibilityTimeout` | `SQS_VISIBILITY_TIMEOUT` | `30` |
 | `WorkerPoolSize` | `SQS_WORKER_POOL_SIZE` | `10` |
 
-Multiple queues use different prefixes:
+**Multiple queues in the same region share one client** — only the queue URL differs per producer/consumer:
 
 ```go
-orderCfg,   _ := sqs.ConfigFromEnv("ORDER_SQS")
-invoiceCfg, _ := sqs.ConfigFromEnv("INVOICE_SQS")
+// One client, shared across all queues in the same region
+sqsCfg, _ := sqs.ConfigFromEnv("SQS")
+client, _ := sqs.NewClient(ctx, sqsCfg, logger)
+
+// Each producer/consumer gets its own queue URL via a different prefix
+orderCfg,   _ := producer.ConfigFromEnv("ORDER_SQS")    // ORDER_SQS_QUEUE_URL
+invoiceCfg, _ := producer.ConfigFromEnv("INVOICE_SQS")  // INVOICE_SQS_QUEUE_URL
+
+orderProd,   _ := producer.New(client, logger, orderCfg, "order-producer")
+invoiceProd, _ := producer.New(client, logger, invoiceCfg, "invoice-producer")
 ```
+
+A separate `sqs.ConfigFromEnv` prefix is only needed when queues are in **different regions or endpoints** (e.g., multi-region setup or LocalStack vs real AWS).
 
 ## Producer
 
