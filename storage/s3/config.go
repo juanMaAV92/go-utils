@@ -3,7 +3,7 @@ package s3
 import (
 	"fmt"
 
-	"github.com/juanmaAV/go-utils/env"
+	"github.com/juanMaAV92/go-utils/env"
 )
 
 // Config holds the configuration for the S3 client.

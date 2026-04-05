@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/juanmaAV/go-utils/errors"
+	"github.com/juanMaAV92/go-utils/errors"
 )
 
 // Validator wraps go-playground/validator with structured error formatting.

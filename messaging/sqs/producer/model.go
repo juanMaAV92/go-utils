@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juanmaAV/go-utils/env"
+	"github.com/juanMaAV92/go-utils/env"
 )
 
 // ProducerConfig holds producer-specific configuration.

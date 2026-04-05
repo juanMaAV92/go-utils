@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/juanmaAV/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
@@ -77,7 +77,7 @@ func New(log logger.Logger, opts ...ClientOption) Client {
 	return &client{
 		resty:             rc,
 		logger:            log,
-		tracer:            otel.Tracer("github.com/juanmaAV/go-utils/httpclient"),
+		tracer:            otel.Tracer("github.com/juanMaAV92/go-utils/httpclient"),
 		downstreamService: cfg.ServiceName,
 		config:            cfg,
 	}

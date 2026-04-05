@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/juanmaAV/go-utils/httpclient"
+	"github.com/juanMaAV92/go-utils/httpclient"
 )
 
 type contextIdentityKey struct{}

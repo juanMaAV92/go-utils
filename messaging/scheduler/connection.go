@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/scheduler"
-	"github.com/juanmaAV/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/logger"
 	"go.opentelemetry.io/otel"
 )
 
@@ -28,7 +28,7 @@ func New(ctx context.Context, cfg Config, log logger.Logger) (Scheduler, error) 
 	return &sched{
 		client:  scheduler.NewFromConfig(awsCfg, opts...),
 		logger:  log,
-		tracer:  otel.Tracer("github.com/juanmaAV/go-utils/messaging/scheduler"),
+		tracer:  otel.Tracer("github.com/juanMaAV92/go-utils/messaging/scheduler"),
 		roleArn: cfg.RoleArn,
 	}, nil
 }

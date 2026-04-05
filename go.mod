@@ -1,4 +1,4 @@
-module github.com/juanmaAV/go-utils
+module github.com/juanMaAV92/go-utils
 
 go 1.25.0
 

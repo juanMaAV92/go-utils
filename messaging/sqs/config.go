@@ -3,7 +3,7 @@ package sqs
 import (
 	"fmt"
 
-	"github.com/juanmaAV/go-utils/env"
+	"github.com/juanMaAV92/go-utils/env"
 )
 
 // Config holds the base SQS configuration shared by producer and consumer.

@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/juanmaAV/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/logger"
 	"gorm.io/gorm"
 )
 

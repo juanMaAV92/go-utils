@@ -6,7 +6,7 @@ import (
 	"time"
 
 	gjwt "github.com/golang-jwt/jwt/v5"
-	"github.com/juanmaAV/go-utils/security/jwt"
+	"github.com/juanMaAV92/go-utils/security/jwt"
 )
 
 // Test RSA key pair (2048-bit, for testing only)

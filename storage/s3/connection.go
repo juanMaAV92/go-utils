@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/juanmaAV/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/logger"
 	"go.opentelemetry.io/otel"
 )
 
@@ -33,6 +33,6 @@ func New(ctx context.Context, cfg Config, log logger.Logger) (Storage, error) {
 		client:    client,
 		presigner: s3.NewPresignClient(client),
 		logger:    log,
-		tracer:    otel.Tracer("github.com/juanmaAV/go-utils/storage/s3"),
+		tracer:    otel.Tracer("github.com/juanMaAV92/go-utils/storage/s3"),
 	}, nil
 }

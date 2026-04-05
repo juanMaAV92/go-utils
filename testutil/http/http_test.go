@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	httptest2 "github.com/juanmaAV/go-utils/testutil/http"
+	httptest2 "github.com/juanMaAV92/go-utils/testutil/http"
 )
 
 func TestNewRequest_Method(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/juanmaAV/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -60,7 +60,7 @@ func newWithAPI(client sqsAPI, log logger.Logger, cfg ProducerConfig, name strin
 		logger: log,
 		cfg:    cfg,
 		name:   name,
-		tracer: otel.Tracer("github.com/juanmaAV/go-utils/messaging/sqs"),
+		tracer: otel.Tracer("github.com/juanMaAV92/go-utils/messaging/sqs"),
 	}
 }
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/juanmaAV/go-utils/env"
+	"github.com/juanMaAV92/go-utils/env"
 	goredis "github.com/redis/go-redis/v9"
 )
 

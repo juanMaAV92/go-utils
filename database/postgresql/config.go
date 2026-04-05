@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/juanmaAV/go-utils/env"
+	"github.com/juanMaAV92/go-utils/env"
 )
 
 // Config holds the configuration for a PostgreSQL connection pool.
