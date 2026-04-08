@@ -203,6 +203,16 @@ func (db *database) WithTransaction(ctx context.Context, fn TransactionFunc) err
 	})
 }
 
+// Close releases the underlying connection pool.
+// Call once during graceful shutdown, after all in-flight requests have completed.
+func (db *database) Close() error {
+	sqlDB, err := db.instance.DB()
+	if err != nil {
+		return fmt.Errorf("postgresql: failed to get sql.DB for close: %w", err)
+	}
+	return sqlDB.Close()
+}
+
 // --- internal helpers ---
 
 func validate(ctx context.Context, model any) error {

@@ -18,6 +18,9 @@ type Database interface {
 	Count(ctx context.Context, model any, options *QueryOptions, conditions any, args ...any) (count int64, err error)
 	Exec(ctx context.Context, model any, sql string, args ...any) (result QueryResult, err error)
 	WithTransaction(ctx context.Context, fn TransactionFunc) error
+	// Close releases the underlying connection pool.
+	// Call once during graceful shutdown, after all in-flight requests have completed.
+	Close() error
 }
 
 type database struct {
