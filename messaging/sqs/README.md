@@ -6,9 +6,9 @@ SQS producer and consumer with OTel tracing, W3C Trace Context propagation, SNS 
 
 ```go
 import (
-    "github.com/juanmaAV/go-utils/messaging/sqs"
-    "github.com/juanmaAV/go-utils/messaging/sqs/producer"
-    "github.com/juanmaAV/go-utils/messaging/sqs/consumer"
+    "github.com/juanMaAV92/go-utils/messaging/sqs"
+    "github.com/juanMaAV92/go-utils/messaging/sqs/producer"
+    "github.com/juanMaAV92/go-utils/messaging/sqs/consumer"
 )
 
 // 1. Create the base SQS client (shared by producer and consumer)

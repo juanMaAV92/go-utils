@@ -64,7 +64,7 @@ errors.ValidationErrorCode       // "VALIDATION_ERROR"
 ## Usage
 
 ```go
-import "github.com/juanmaAV/go-utils/errors"
+import "github.com/juanMaAV92/go-utils/errors"
 
 // Return predefined
 return errors.ErrNotFound()
@@ -87,7 +87,7 @@ if errors.As(err, &appErr) {
 ## Echo integration
 
 ```go
-import echoerr "github.com/juanmaAV/go-utils/errors/echo"
+import echoerr "github.com/juanMaAV92/go-utils/errors/echo"
 
 e.HTTPErrorHandler = echoerr.HTTPErrorHandler
 ```

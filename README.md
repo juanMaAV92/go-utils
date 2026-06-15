@@ -1,9 +1,14 @@
 # go-utils
 
+[![CI](https://github.com/juanMaAV92/go-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/juanMaAV92/go-utils/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/juanMaAV92/go-utils.svg)](https://pkg.go.dev/github.com/juanMaAV92/go-utils)
+[![Go Report Card](https://goreportcard.com/badge/github.com/juanMaAV92/go-utils)](https://goreportcard.com/report/github.com/juanMaAV92/go-utils)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Go utility library for building microservices on AWS. Single module, consistent patterns across all packages: `ConfigFromEnv`, interface-driven design, OTel tracing.
 
 ```bash
-go get github.com/juanmaAV/go-utils
+go get github.com/juanMaAV92/go-utils
 ```
 
 Requires Go 1.21+.

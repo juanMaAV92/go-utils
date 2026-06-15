@@ -28,7 +28,7 @@ type Binder interface {
 ## Usage
 
 ```go
-import "github.com/juanmaAV/go-utils/validator"
+import "github.com/juanMaAV92/go-utils/validator"
 
 v := validator.New()
 
@@ -43,7 +43,7 @@ err := v.BindAndValidate(c, &req)
 
 ```go
 import (
-    "github.com/juanmaAV/go-utils/validator"
+    "github.com/juanMaAV92/go-utils/validator"
     "github.com/labstack/echo/v4"
 )
 

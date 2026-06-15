@@ -64,7 +64,7 @@ resp, err := c.Post(ctx, "/form", nil,
 ## Usage
 
 ```go
-import "github.com/juanmaAV/go-utils/httpclient"
+import "github.com/juanMaAV92/go-utils/httpclient"
 
 c := httpclient.New(log,
     httpclient.WithBaseURL("https://api.example.com"),

@@ -5,7 +5,7 @@ S3 client with OTel tracing and structured logging. Supports direct backend oper
 ## Setup
 
 ```go
-import "github.com/juanmaAV/go-utils/storage/s3"
+import "github.com/juanMaAV92/go-utils/storage/s3"
 
 cfg, err := s3.ConfigFromEnv("S3")
 if err != nil {

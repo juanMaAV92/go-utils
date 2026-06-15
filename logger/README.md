@@ -35,7 +35,7 @@ Available levels: `FatalLevel`, `ErrorLevel`, `WarningLevel`, `InfoLevel`, `Debu
 ## Usage
 
 ```go
-import "github.com/juanmaAV/go-utils/logger"
+import "github.com/juanMaAV92/go-utils/logger"
 
 log := logger.New("order-service", "production")
 log := logger.New("order-service", "local", logger.WithLevel(logger.DebugLevel))

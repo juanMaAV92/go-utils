@@ -8,8 +8,8 @@ SNS producer with OTel tracing and W3C Trace Context propagation.
 
 ```go
 import (
-    "github.com/juanmaAV/go-utils/messaging/sns"
-    "github.com/juanmaAV/go-utils/messaging/sns/producer"
+    "github.com/juanMaAV92/go-utils/messaging/sns"
+    "github.com/juanMaAV92/go-utils/messaging/sns/producer"
 )
 
 snsCfg, err := sns.ConfigFromEnv("SNS")

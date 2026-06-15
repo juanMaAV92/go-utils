@@ -5,7 +5,7 @@ Redis client with JSON serialization, OTel tracing/metrics, Pub/Sub, and atomic 
 ## Setup
 
 ```go
-import "github.com/juanmaAV/go-utils/cache/redis"
+import "github.com/juanMaAV92/go-utils/cache/redis"
 
 cfg, err := redis.ConfigFromEnv("REDIS")
 if err != nil {
