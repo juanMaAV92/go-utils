@@ -5,7 +5,7 @@ PostgreSQL client built on [GORM](https://gorm.io) with OTel tracing, structured
 ## Setup
 
 ```go
-import "github.com/juanmaAV/go-utils/database/postgresql"
+import "github.com/juanMaAV92/go-utils/database/postgresql"
 
 // From environment variables
 cfg, err := postgresql.ConfigFromEnv("DB")  // reads DB_HOST, DB_USER, DB_PASSWORD, DB_NAME …

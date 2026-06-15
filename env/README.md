@@ -54,7 +54,7 @@ env.LocalEnvironment  // "local"
 ## Usage
 
 ```go
-import "github.com/juanmaAV/go-utils/env"
+import "github.com/juanMaAV92/go-utils/env"
 
 // Validate all required vars at once — fail with a clear message
 env.MustHave("PORT", "DATABASE_URL", "JWT_SECRET")

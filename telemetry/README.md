@@ -19,7 +19,7 @@ type Config struct {
 ## Usage
 
 ```go
-import "github.com/juanmaAV/go-utils/telemetry"
+import "github.com/juanMaAV92/go-utils/telemetry"
 
 shutdown, err := telemetry.InitTelemetry(ctx, telemetry.Config{
     ServiceName: "order-service",

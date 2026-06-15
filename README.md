@@ -3,7 +3,7 @@
 Go utility library for building microservices on AWS. Single module, consistent patterns across all packages: `ConfigFromEnv`, interface-driven design, OTel tracing.
 
 ```bash
-go get github.com/juanmaAV/go-utils
+go get github.com/juanMaAV92/go-utils
 ```
 
 Requires Go 1.21+.

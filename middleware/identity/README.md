@@ -20,7 +20,7 @@ API Gateway
 ## Setup
 
 ```go
-import "github.com/juanmaAV/go-utils/middleware/identity"
+import "github.com/juanMaAV92/go-utils/middleware/identity"
 
 e.Use(identity.Middleware(identity.HeaderConfig{
     Extra: []string{"X-User-Nature", "X-Hierarchy-Path", "X-Abac-JWT"},

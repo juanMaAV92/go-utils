@@ -10,7 +10,7 @@ import (
     "net/http/httptest"
     "testing"
 
-    httptest "github.com/juanmaAV/go-utils/testutil/http"
+    httptest "github.com/juanMaAV92/go-utils/testutil/http"
 )
 
 func TestGetUser(t *testing.T) {

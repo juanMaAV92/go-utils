@@ -10,7 +10,7 @@ import (
     "testing"
 
     "github.com/labstack/echo/v4"
-    echotest "github.com/juanmaAV/go-utils/testutil/echo"
+    echotest "github.com/juanMaAV92/go-utils/testutil/echo"
 )
 
 func TestCreateOrder(t *testing.T) {

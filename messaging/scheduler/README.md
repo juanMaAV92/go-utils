@@ -7,7 +7,7 @@ AWS EventBridge Scheduler client with OTel tracing.
 ## Setup
 
 ```go
-import "github.com/juanmaAV/go-utils/messaging/scheduler"
+import "github.com/juanMaAV92/go-utils/messaging/scheduler"
 
 cfg, err := scheduler.ConfigFromEnv("SCHEDULER")
 sched, err := scheduler.New(ctx, cfg, logger)

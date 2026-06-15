@@ -37,7 +37,7 @@ Dereferences `s`. Returns `""` if nil.
 ## Usage
 
 ```go
-import "github.com/juanmaAV/go-utils/pointers"
+import "github.com/juanMaAV92/go-utils/pointers"
 
 p := pointers.Pointer(42)             // *int
 s := pointers.Pointer("hello")        // *string

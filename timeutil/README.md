@@ -45,7 +45,7 @@ Preserve the original location. Useful for date-range queries.
 ## Usage
 
 ```go
-import "github.com/juanmaAV/go-utils/timeutil"
+import "github.com/juanMaAV92/go-utils/timeutil"
 
 // Use constants to avoid the magic format string
 t.Format(timeutil.DateLayout)      // "2024-03-15"

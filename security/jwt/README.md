@@ -21,7 +21,7 @@ type MyClaims struct {
 ### 2. Create the service
 
 ```go
-import "github.com/juanmaAV/go-utils/security/jwt"
+import "github.com/juanMaAV92/go-utils/security/jwt"
 
 svc, err := jwt.New(privateKeyPEM, publicKeyPEM, "my-service")
 ```
