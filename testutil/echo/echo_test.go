@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
+	echotest "github.com/juanMaAV92/go-utils/v2/testutil/echo"
 	"github.com/labstack/echo/v4"
-	echotest "github.com/juanMaAV92/go-utils/testutil/echo"
 )
 
 func TestPrepareContext_Basic(t *testing.T) {

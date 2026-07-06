@@ -43,7 +43,7 @@ func GetEnvWithDefault(key, defaultValue string) string {
 
 // GetEnvironment returns the value of ENVIRONMENT, defaulting to "local".
 func GetEnvironment() string {
-	if env := os.Getenv(EnvironmentKey); env != "" {
+	if env := strings.TrimSpace(os.Getenv(EnvironmentKey)); env != "" {
 		return env
 	}
 	return LocalEnvironment

@@ -47,9 +47,12 @@ type GetObjectResponse struct {
 
 // PutObjectRequest contains parameters for uploading an object.
 type PutObjectRequest struct {
-	Bucket      string
-	Key         string
-	Body        io.Reader
+	Bucket string
+	Key    string
+	// Body must be seekable: SigV4 payload signing rewinds it to compute the
+	// checksum. Use *os.File, *bytes.Reader, or *strings.Reader; wrap a plain
+	// stream with bytes.NewReader(data) first.
+	Body        io.ReadSeeker
 	ContentType string            // optional
 	Metadata    map[string]string // optional
 }

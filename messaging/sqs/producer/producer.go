@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/juanMaAV92/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/v2/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -60,7 +60,7 @@ func newWithAPI(client sqsAPI, log logger.Logger, cfg ProducerConfig, name strin
 		logger: log,
 		cfg:    cfg,
 		name:   name,
-		tracer: otel.Tracer("github.com/juanMaAV92/go-utils/messaging/sqs"),
+		tracer: otel.Tracer("github.com/juanMaAV92/go-utils/v2/messaging/sqs"),
 	}
 }
 
@@ -258,8 +258,8 @@ type attributeCarrier struct {
 	attrs map[string]string
 }
 
-func (c *attributeCarrier) Get(key string) string        { return c.attrs[key] }
-func (c *attributeCarrier) Set(key, value string)        { c.attrs[key] = value }
+func (c *attributeCarrier) Get(key string) string { return c.attrs[key] }
+func (c *attributeCarrier) Set(key, value string) { c.attrs[key] = value }
 func (c *attributeCarrier) Keys() []string {
 	keys := make([]string, 0, len(c.attrs))
 	for k := range c.attrs {

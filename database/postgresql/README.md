@@ -29,7 +29,8 @@ if err != nil {
 | `Password` | `DB_PASSWORD` | required |
 | `Name` | `DB_NAME` | required |
 | `SSLMode` | `DB_SSLMODE` | `require` |
-| `MaxPoolSize` | `DB_MAX_POOL_SIZE` | `2` |
+| `MaxPoolSize` | `DB_MAX_POOL_SIZE` | `10` (max open) |
+| `MaxIdleConns` | `DB_MAX_IDLE_CONNS` | `5` (clamped to `MaxPoolSize`) |
 | `MaxLifeTime` | `DB_MAX_LIFE_TIME` | `5m` |
 | `Verbose` | — | `false` |
 

@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
+
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func newTestLogger(buf *bytes.Buffer, opts ...Option) Logger {
@@ -119,5 +122,23 @@ func TestMessageKey_IsMessage(t *testing.T) {
 	}
 	if m["message"] != "hello world" {
 		t.Errorf("message = %v, want \"hello world\"", m["message"])
+	}
+}
+
+func TestTraceInjectionSurvivesWith(t *testing.T) {
+	var buf bytes.Buffer
+	l := newWithWriter(&buf, "svc")
+
+	tp := sdktrace.NewTracerProvider()
+	ctx, span := tp.Tracer("t").Start(context.Background(), "op")
+	defer span.End()
+
+	l.Info(ctx, "step1", "hello")
+	out := buf.String()
+	if !strings.Contains(out, "trace_id") || !strings.Contains(out, "span_id") {
+		t.Errorf("trace_id/span_id missing from log output: %s", out)
+	}
+	if !strings.Contains(out, span.SpanContext().TraceID().String()) {
+		t.Errorf("actual trace id not in output: %s", out)
 	}
 }

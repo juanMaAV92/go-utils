@@ -84,6 +84,10 @@ result, err := store.PutObject(ctx, s3.PutObjectRequest{
 fmt.Println(result.VersionId)
 ```
 
+> `Body` must be an `io.ReadSeeker` (`*os.File`, `*bytes.Reader`, `*strings.Reader`).
+> SigV4 rewinds it to sign the payload; wrap a non-seekable stream with
+> `bytes.NewReader(data)` first.
+
 ### DeleteObject
 
 Missing keys are silently ignored (S3 behavior).

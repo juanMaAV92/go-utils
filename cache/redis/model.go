@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/juanMaAV92/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/v2/logger"
 	goredis "github.com/redis/go-redis/v9"
 )
 

@@ -101,5 +101,8 @@ func resolveSampler(rate float64) sdktrace.Sampler {
 	if rate <= 0 || rate >= 1.0 {
 		return sdktrace.AlwaysSample()
 	}
-	return sdktrace.TraceIDRatioBased(rate)
+	// ParentBased so a sampled upstream span is always kept: honors the
+	// incoming traceparent decision instead of re-rolling per service,
+	// which would split distributed traces.
+	return sdktrace.ParentBased(sdktrace.TraceIDRatioBased(rate))
 }

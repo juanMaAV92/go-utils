@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/juanMaAV92/go-utils/errors"
+	"github.com/juanMaAV92/go-utils/v2/errors"
 )
 
 // Validator wraps go-playground/validator with structured error formatting.
@@ -102,11 +102,11 @@ func formatFieldError(fe validator.FieldError) string {
 	case "uuid":
 		return field + " must be a valid UUID"
 	case "min":
-		return field + " must be at least " + fe.Param() + " characters"
+		return field + " must be at least " + fe.Param() + unit(fe)
 	case "max":
-		return field + " must be at most " + fe.Param() + " characters"
+		return field + " must be at most " + fe.Param() + unit(fe)
 	case "len":
-		return field + " must be exactly " + fe.Param() + " characters"
+		return field + " must be exactly " + fe.Param() + unit(fe)
 	case "gt":
 		return field + " must be greater than " + fe.Param()
 	case "gte":
@@ -135,5 +135,20 @@ func formatFieldError(fe validator.FieldError) string {
 		return field + " is required when " + fe.Param() + " is not present"
 	default:
 		return field + " is invalid (" + fe.Tag() + ")"
+	}
+}
+
+// unit picks the right noun for min/max/len constraints based on the field kind:
+// go-playground applies these to strings (length), collections (element count),
+// and numbers (value), so a fixed "characters" is wrong for the latter two.
+func unit(fe validator.FieldError) string {
+	switch fe.Kind() {
+	case reflect.String:
+		return " characters"
+	case reflect.Slice, reflect.Array, reflect.Map:
+		return " items"
+	default:
+		// numeric kinds: the constraint is on the value itself, no count noun
+		return ""
 	}
 }

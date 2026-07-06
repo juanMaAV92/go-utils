@@ -9,17 +9,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awssched "github.com/aws/aws-sdk-go-v2/service/scheduler"
 	"github.com/aws/aws-sdk-go-v2/service/scheduler/types"
-	"github.com/juanMaAV92/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/v2/logger"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
 const (
-	defaultGroupName    = "default"
-	defaultTimezone     = "UTC"
-	defaultMaxAttempts  = int32(3)
-	defaultMaxAgeSecs   = int32(3600)
+	defaultGroupName   = "default"
+	defaultTimezone    = "UTC"
+	defaultMaxAttempts = int32(3)
+	defaultMaxAgeSecs  = int32(3600)
 )
 
 // schedulerAPI is the subset of *awssched.Client used by sched — enables mocking in tests.
@@ -162,17 +162,15 @@ func (s *sched) buildCreateInput(cfg ScheduleConfig) (*awssched.CreateScheduleIn
 		return nil, err
 	}
 
-	groupName := orDefault(cfg.GroupName, defaultGroupName)
-	timezone := orDefault(cfg.Timezone, defaultTimezone)
-
 	return &awssched.CreateScheduleInput{
 		Name:                       aws.String(cfg.Name),
 		Description:                aws.String(cfg.Description),
-		GroupName:                  aws.String(groupName),
+		GroupName:                  aws.String(orDefault(cfg.GroupName, defaultGroupName)),
 		ScheduleExpression:         aws.String(expr),
-		ScheduleExpressionTimezone: aws.String(timezone),
+		ScheduleExpressionTimezone: aws.String(orDefault(cfg.Timezone, defaultTimezone)),
 		FlexibleTimeWindow:         ftw,
 		Target:                     target,
+		State:                      scheduleState(cfg.Disabled),
 	}, nil
 }
 
@@ -182,22 +180,41 @@ func (s *sched) buildUpdateInput(cfg ScheduleConfig) (*awssched.UpdateScheduleIn
 		return nil, err
 	}
 
-	groupName := orDefault(cfg.GroupName, defaultGroupName)
-	timezone := orDefault(cfg.Timezone, defaultTimezone)
-
 	return &awssched.UpdateScheduleInput{
 		Name:                       aws.String(cfg.Name),
 		Description:                aws.String(cfg.Description),
-		GroupName:                  aws.String(groupName),
+		GroupName:                  aws.String(orDefault(cfg.GroupName, defaultGroupName)),
 		ScheduleExpression:         aws.String(expr),
-		ScheduleExpressionTimezone: aws.String(timezone),
+		ScheduleExpressionTimezone: aws.String(orDefault(cfg.Timezone, defaultTimezone)),
 		FlexibleTimeWindow:         ftw,
 		Target:                     target,
+		State:                      scheduleState(cfg.Disabled),
 	}, nil
 }
 
+// scheduleState maps the Disabled flag to the AWS enum. It is set explicitly on
+// every create AND update so that update's full-replace semantics never silently
+// re-enable a paused schedule.
+func scheduleState(disabled bool) types.ScheduleState {
+	if disabled {
+		return types.ScheduleStateDisabled
+	}
+	return types.ScheduleStateEnabled
+}
+
 func (s *sched) buildCommon(cfg ScheduleConfig) (*types.FlexibleTimeWindow, string, *types.Target, error) {
-	expr := fmt.Sprintf("at(%s)", cfg.ScheduleTime.UTC().Format("2006-01-02T15:04:05"))
+	// Format the wall-clock in the schedule's own timezone so it matches
+	// ScheduleExpressionTimezone. Formatting in UTC while labelling it with a
+	// non-UTC zone would shift the fire time by the UTC offset.
+	loc := time.UTC
+	if tz := orDefault(cfg.Timezone, defaultTimezone); tz != defaultTimezone {
+		if l, err := time.LoadLocation(tz); err == nil {
+			loc = l
+		} else {
+			return nil, "", nil, fmt.Errorf("scheduler: invalid timezone %q: %w", tz, err)
+		}
+	}
+	expr := fmt.Sprintf("at(%s)", cfg.ScheduleTime.In(loc).Format("2006-01-02T15:04:05"))
 
 	var ftw *types.FlexibleTimeWindow
 	if cfg.FlexibleTimeWindowMinutes <= 0 {
@@ -303,5 +320,3 @@ func orDefault(v, def string) string {
 	}
 	return v
 }
-
-

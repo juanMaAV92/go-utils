@@ -78,13 +78,28 @@ func ValidateToken[T any, C interface {
 	return parseToken[T, C](s, tokenString)
 }
 
-// ValidateTokenIgnoringExpiration validates the signature but skips expiration.
-// Useful for refresh token flows where the expired token is used to obtain a new one.
+// ValidateTokenIgnoringExpiration validates signature, algorithm and issuer but
+// skips the time-based claims (exp/nbf/iat). Useful for refresh token flows where
+// the expired token is used to obtain a new one.
 func ValidateTokenIgnoringExpiration[T any, C interface {
 	*T
 	jwt.Claims
 }](s *TokenService, tokenString string) (C, error) {
-	return parseToken[T, C](s, tokenString, jwt.WithoutClaimsValidation())
+	// WithoutClaimsValidation disables all registered-claims checks (including
+	// issuer), so issuer is re-verified manually below. WithValidMethods still
+	// applies — it is a parser option, not a claims check.
+	claims, err := parseToken[T, C](s, tokenString, jwt.WithoutClaimsValidation())
+	if err != nil {
+		return claims, err
+	}
+	if s.issuer != "" {
+		iss, ierr := jwt.Claims(claims).GetIssuer()
+		if ierr != nil || iss != s.issuer {
+			var zero C
+			return zero, fmt.Errorf("invalid issuer")
+		}
+	}
+	return claims, nil
 }
 
 func parseToken[T any, C interface {
@@ -96,7 +111,7 @@ func parseToken[T any, C interface {
 		return zero, fmt.Errorf("public key required for validation")
 	}
 	claims := C(new(T))
-	token, err := jwt.ParseWithClaims(tokenString, claims, s.keyFunc(), opts...)
+	token, err := jwt.ParseWithClaims(tokenString, claims, s.keyFunc(), append(s.baseParserOpts(), opts...)...)
 	if err != nil {
 		return zero, err
 	}
@@ -104,6 +119,19 @@ func parseToken[T any, C interface {
 		return zero, fmt.Errorf("invalid token")
 	}
 	return claims, nil
+}
+
+// baseParserOpts are applied to every validation: RS256 only, expiration required,
+// and issuer enforced when the service was configured with one.
+func (s *TokenService) baseParserOpts() []jwt.ParserOption {
+	opts := []jwt.ParserOption{
+		jwt.WithValidMethods([]string{"RS256"}),
+		jwt.WithExpirationRequired(),
+	}
+	if s.issuer != "" {
+		opts = append(opts, jwt.WithIssuer(s.issuer))
+	}
+	return opts
 }
 
 func (s *TokenService) keyFunc() jwt.Keyfunc {
