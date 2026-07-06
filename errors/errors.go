@@ -26,9 +26,9 @@ func (e *ErrorResponse) Error() string {
 	return fmt.Sprintf("HTTP_STATUS=%d CODE=%s MESSAGES=%v", e.HttpCode, e.Code, e.Messages)
 }
 
-func (e *ErrorResponse) ErrorCode() string     { return e.Code }
+func (e *ErrorResponse) ErrorCode() string       { return e.Code }
 func (e *ErrorResponse) ErrorMessages() []string { return e.Messages }
-func (e *ErrorResponse) ErrorHTTPCode() int    { return e.HttpCode }
+func (e *ErrorResponse) ErrorHTTPCode() int      { return e.HttpCode }
 
 // WithMessage returns a copy of e with Messages replaced by a single message.
 func (e *ErrorResponse) WithMessage(msg string) *ErrorResponse {

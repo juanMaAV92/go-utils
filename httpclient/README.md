@@ -45,6 +45,10 @@ httpclient.New(log,
 )
 ```
 
+> Logging records request metadata only — method, URL, status, duration, query
+> params. Request and response **bodies are never logged**, since they routinely
+> carry credentials and tokens. Inspect payloads via tracing when you need them.
+
 ## Request options
 
 ```go

@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/juanMaAV92/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/v2/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -28,10 +29,10 @@ type sqsAPI interface {
 
 // snsEnvelope is the wrapper SNS adds when delivering to SQS.
 type snsEnvelope struct {
-	Type              string                       `json:"Type"`
-	TopicArn          string                       `json:"TopicArn"`
-	Message           string                       `json:"Message"`
-	MessageAttributes map[string]snsMessageAttr    `json:"MessageAttributes,omitempty"`
+	Type              string                    `json:"Type"`
+	TopicArn          string                    `json:"TopicArn"`
+	Message           string                    `json:"Message"`
+	MessageAttributes map[string]snsMessageAttr `json:"MessageAttributes,omitempty"`
 }
 
 type snsMessageAttr struct {
@@ -72,6 +73,7 @@ func New(client *sqs.Client, processor MessageProcessor, log logger.Logger, cfg 
 }
 
 func newWithAPI(client sqsAPI, processor MessageProcessor, log logger.Logger, cfg ConsumerConfig, name string) Consumer {
+	cfg = withConsumerDefaults(cfg)
 	return &consumer{
 		client:      client,
 		processor:   processor,
@@ -79,8 +81,37 @@ func newWithAPI(client sqsAPI, processor MessageProcessor, log logger.Logger, cf
 		cfg:         cfg,
 		name:        name,
 		messageChan: make(chan types.Message, messageChanBuffer),
-		tracer:      otel.Tracer("github.com/juanMaAV92/go-utils/messaging/sqs"),
+		tracer:      otel.Tracer("github.com/juanMaAV92/go-utils/v2/messaging/sqs"),
 	}
+}
+
+// withConsumerDefaults fills zero-valued fields and clamps MaxMessages /
+// WaitTimeSeconds to the AWS limits (1–10 and 0–20). Sending out-of-range
+// values makes ReceiveMessage fail on every call.
+func withConsumerDefaults(cfg ConsumerConfig) ConsumerConfig {
+	if cfg.MaxMessages < 1 {
+		cfg.MaxMessages = 10
+	} else if cfg.MaxMessages > 10 {
+		cfg.MaxMessages = 10
+	}
+	if cfg.WaitTimeSeconds < 0 {
+		cfg.WaitTimeSeconds = 0
+	} else if cfg.WaitTimeSeconds > 20 {
+		cfg.WaitTimeSeconds = 20
+	}
+	if cfg.VisibilityTimeout <= 0 {
+		cfg.VisibilityTimeout = 30
+	}
+	if cfg.WorkerPoolSize <= 0 {
+		cfg.WorkerPoolSize = 10
+	}
+	if cfg.PollErrorBackoff <= 0 {
+		cfg.PollErrorBackoff = time.Second
+	}
+	if cfg.ShutdownTimeout <= 0 {
+		cfg.ShutdownTimeout = 30 * time.Second
+	}
+	return cfg
 }
 
 // Start polls SQS and dispatches messages to the worker pool.
@@ -89,24 +120,55 @@ func (c *consumer) Start(ctx context.Context) error {
 	c.logger.Info(ctx, "sqs.consumer.start", "starting consumer",
 		"consumer", c.name, "queue", c.cfg.QueueURL, "workers", c.cfg.WorkerPoolSize)
 
+	// Workers run on a context that survives ctx cancellation, so in-flight
+	// processing and its subsequent delete complete cleanly on shutdown instead
+	// of failing on a cancelled ctx (which would redeliver already-handled
+	// messages). It is force-cancelled only if the drain exceeds ShutdownTimeout.
+	workerCtx, cancelWorkers := context.WithCancel(context.WithoutCancel(ctx))
+	defer cancelWorkers()
+
 	for i := 0; i < c.cfg.WorkerPoolSize; i++ {
 		c.wg.Add(1)
-		go c.worker(ctx, i)
+		go c.worker(workerCtx, i)
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
-			c.logger.Info(ctx, "sqs.consumer.stop", "context cancelled, stopping", "consumer", c.name)
+			c.logger.Info(ctx, "sqs.consumer.stop", "context cancelled, draining", "consumer", c.name)
 			close(c.messageChan)
-			c.wg.Wait()
+			c.drain(ctx, cancelWorkers)
 			c.logger.Info(ctx, "sqs.consumer.stop", "consumer stopped", "consumer", c.name)
 			return ctx.Err()
 		default:
 			if err := c.poll(ctx); err != nil {
-				c.logger.Error(ctx, "sqs.consumer.poll", "poll error", "consumer", c.name, "error", err.Error())
+				c.logger.Error(ctx, "sqs.consumer.poll", "poll error, backing off",
+					"consumer", c.name, "backoff", c.cfg.PollErrorBackoff.String(), "error", err.Error())
+				// Backoff prevents a tight hot loop that hammers SQS (and amplifies
+				// throttling) when ReceiveMessage keeps failing.
+				select {
+				case <-time.After(c.cfg.PollErrorBackoff):
+				case <-ctx.Done():
+				}
 			}
 		}
+	}
+}
+
+// drain waits for workers to finish buffered messages, bounded by ShutdownTimeout.
+func (c *consumer) drain(ctx context.Context, cancelWorkers context.CancelFunc) {
+	done := make(chan struct{})
+	go func() {
+		c.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(c.cfg.ShutdownTimeout):
+		c.logger.Warning(ctx, "sqs.consumer.stop", "drain timed out, cancelling in-flight work",
+			"consumer", c.name, "timeout", c.cfg.ShutdownTimeout.String())
+		cancelWorkers()
+		<-done
 	}
 }
 

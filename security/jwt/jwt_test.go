@@ -6,7 +6,7 @@ import (
 	"time"
 
 	gjwt "github.com/golang-jwt/jwt/v5"
-	"github.com/juanMaAV92/go-utils/security/jwt"
+	"github.com/juanMaAV92/go-utils/v2/security/jwt"
 )
 
 // Test RSA key pair (2048-bit, for testing only)
@@ -154,11 +154,11 @@ func TestValidateToken_Expired(t *testing.T) {
 func TestValidateTokenIgnoringExpiration(t *testing.T) {
 	svc := newSvc(t)
 
+	// Realistic refresh token: carries the issuer (via RegisteredClaims) but is
+	// already expired. IgnoringExpiration must still enforce signature + issuer.
 	claims := testClaims{
-		RegisteredClaims: gjwt.RegisteredClaims{
-			ExpiresAt: gjwt.NewNumericDate(time.Now().Add(-time.Hour)),
-		},
-		UserID: "usr_refresh",
+		RegisteredClaims: svc.RegisteredClaims(-time.Hour),
+		UserID:           "usr_refresh",
 	}
 	token, _ := svc.GenerateToken(&claims)
 
@@ -222,5 +222,31 @@ func TestValidateToken_NoPublicKey(t *testing.T) {
 	_, err := jwt.ValidateToken[testClaims, *testClaims](svc, "any.token.here")
 	if err == nil {
 		t.Error("expected error when no public key")
+	}
+}
+
+func TestValidateToken_RejectsWrongIssuer(t *testing.T) {
+	other, err := jwt.New(testPrivKey, testPubKey, "someone-else")
+	if err != nil {
+		t.Fatalf("jwt.New: %v", err)
+	}
+	claims := testClaims{RegisteredClaims: other.RegisteredClaims(time.Hour), UserID: "u"}
+	token, _ := other.GenerateToken(&claims)
+
+	svc := newSvc(t) // configured with testIssuer, different from "someone-else"
+	if _, err := jwt.ValidateToken[testClaims](svc, token); err == nil {
+		t.Error("expected token from a different issuer to be rejected")
+	}
+}
+
+func TestValidateToken_RejectsMissingExpiration(t *testing.T) {
+	svc := newSvc(t)
+	claims := testClaims{
+		RegisteredClaims: gjwt.RegisteredClaims{Issuer: testIssuer}, // no ExpiresAt
+		UserID:           "u",
+	}
+	token, _ := svc.GenerateToken(&claims)
+	if _, err := jwt.ValidateToken[testClaims](svc, token); err == nil {
+		t.Error("expected token without exp to be rejected")
 	}
 }

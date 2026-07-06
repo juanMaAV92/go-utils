@@ -140,19 +140,23 @@ func TestFilterPermissions_NoMatch(t *testing.T) {
 	}
 }
 
-func TestFilterPermissions_SuperAdminAlwaysIncluded(t *testing.T) {
+func TestFilterPermissions_SuperAdminNotForwardedWhenScoped(t *testing.T) {
+	// Scoping must reduce blast radius: superadmin is not auto-forwarded, only
+	// the concrete permissions that match the pattern.
 	ctx := ctxWithIdentity([]string{"all:all", "users:read"}, nil)
 	result := FilterPermissions(ctx, "users:*")
-	if len(result) != 2 || result[0] != "all:all" {
-		t.Errorf("expected superadmin first, got %v", result)
+	if len(result) != 1 || result[0] != "users:read" {
+		t.Errorf("expected only [users:read], got %v", result)
 	}
 }
 
 func TestFilterPermissions_SuperAdminNoPatternMatch(t *testing.T) {
+	// A superadmin with no concrete permission matching the pattern forwards
+	// nothing — "all:all" must not leak past the scoping boundary.
 	ctx := ctxWithIdentity([]string{"all:all", "users:read"}, nil)
 	result := FilterPermissions(ctx, "events:*")
-	if len(result) != 1 || result[0] != "all:all" {
-		t.Errorf("expected only superadmin, got %v", result)
+	if len(result) != 0 {
+		t.Errorf("expected no permissions forwarded, got %v", result)
 	}
 }
 
@@ -168,7 +172,7 @@ func TestFilterPermissions_EmptyPermissions(t *testing.T) {
 func TestGetFilteredPermissionsString(t *testing.T) {
 	ctx := ctxWithIdentity([]string{"all:all", "users:read", "users:write", "events:write"}, nil)
 	got := GetFilteredPermissionsString(ctx, "users:*")
-	want := "all:all,users:read,users:write"
+	want := "users:read,users:write"
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -270,8 +274,8 @@ func TestMiddleware_MissingUserCode(t *testing.T) {
 
 func TestMiddleware_ExtraHeaders(t *testing.T) {
 	c, _ := newEchoCtx(map[string]string{
-		"X-User-Code":    "user-123",
-		"X-User-Nature":  "INDIVIDUAL",
+		"X-User-Code":      "user-123",
+		"X-User-Nature":    "INDIVIDUAL",
 		"X-Hierarchy-Path": "/org/dept/123",
 	})
 

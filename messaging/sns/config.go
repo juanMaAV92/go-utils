@@ -3,7 +3,7 @@ package sns
 import (
 	"fmt"
 
-	"github.com/juanMaAV92/go-utils/env"
+	"github.com/juanMaAV92/go-utils/v2/env"
 )
 
 // Config holds the base SNS configuration.

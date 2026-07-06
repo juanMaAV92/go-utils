@@ -104,6 +104,18 @@ func (h *otelHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.Handler.Handle(ctx, r)
 }
 
+// WithAttrs and WithGroup re-wrap the derived handler so the OTel injection
+// survives slog's builder methods (e.g. the .With("service", ...) in New).
+// Without these, method promotion would return the unwrapped inner handler
+// and Handle above would never run.
+func (h *otelHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &otelHandler{Handler: h.Handler.WithAttrs(attrs)}
+}
+
+func (h *otelHandler) WithGroup(name string) slog.Handler {
+	return &otelHandler{Handler: h.Handler.WithGroup(name)}
+}
+
 func (l *logger) Fatal(ctx context.Context, step, message string, args ...any) {
 	l.sl.Log(ctx, slog.Level(12), message, buildArgs(step, args)...)
 	os.Exit(1)

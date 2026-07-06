@@ -44,10 +44,19 @@ cons, err := consumer.New(client, myProcessor, logger, consCfg, "order-consumer"
 | Field | Env var (prefix=SQS) | Default |
 |---|---|---|
 | `QueueURL` | `SQS_QUEUE_URL` | required |
-| `MaxMessages` | `SQS_MAX_MESSAGES` | `10` |
-| `WaitTimeSeconds` | `SQS_WAIT_TIME_SECONDS` | `20` |
+| `MaxMessages` | `SQS_MAX_MESSAGES` | `10` (clamped to 1–10) |
+| `WaitTimeSeconds` | `SQS_WAIT_TIME_SECONDS` | `20` (clamped to 0–20) |
 | `VisibilityTimeout` | `SQS_VISIBILITY_TIMEOUT` | `30` |
 | `WorkerPoolSize` | `SQS_WORKER_POOL_SIZE` | `10` |
+| `PollErrorBackoff` | `SQS_POLL_ERROR_BACKOFF` | `1s` |
+| `ShutdownTimeout` | `SQS_SHUTDOWN_TIMEOUT` | `30s` |
+
+`MaxMessages`/`WaitTimeSeconds` are clamped to the AWS limits so an out-of-range
+value can't make every `ReceiveMessage` fail. On a poll error the consumer waits
+`PollErrorBackoff` before retrying (no tight hot loop). On `ctx` cancellation it
+stops polling and drains in-flight messages — completing their processing and
+delete on a context that survives shutdown — bounded by `ShutdownTimeout`, so
+already-handled messages are not redelivered.
 
 **Multiple queues in the same region share one client** — only the queue URL differs per producer/consumer:
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	apperrors "github.com/juanMaAV92/go-utils/errors"
+	apperrors "github.com/juanMaAV92/go-utils/v2/errors"
 )
 
 // ---- test structs ----

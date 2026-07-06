@@ -4,20 +4,21 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/juanMaAV92/go-utils/env"
+	"github.com/juanMaAV92/go-utils/v2/env"
 )
 
 // Config holds the configuration for a PostgreSQL connection pool.
 type Config struct {
-	Host        string
-	Port        string        // default "5432"
-	User        string
-	Password    string
-	Name        string
-	SSLMode     string        // "disable" | "require" | "verify-ca" | "verify-full"; default "require"
-	MaxPoolSize int           // max idle and open connections; default 2
-	MaxLifeTime time.Duration // max connection lifetime; default 5m
-	Verbose     bool          // false → silent; true → warn + slow query logging (≥200ms)
+	Host         string
+	Port         string // default "5432"
+	User         string
+	Password     string
+	Name         string
+	SSLMode      string        // "disable" | "require" | "verify-ca" | "verify-full"; default "require"
+	MaxPoolSize  int           // max OPEN connections; default 10
+	MaxIdleConns int           // max IDLE connections; default 5 (clamped to MaxPoolSize)
+	MaxLifeTime  time.Duration // max connection lifetime; default 5m
+	Verbose      bool          // false → silent; true → warn + slow query logging (≥200ms)
 }
 
 // ConfigFromEnv reads database configuration from environment variables.
@@ -33,14 +34,15 @@ type Config struct {
 func ConfigFromEnv(prefix string) (Config, error) {
 	p := prefix + "_"
 	cfg := Config{
-		Host:        env.GetEnv(p + "HOST"),
-		Port:        env.GetEnvWithDefault(p+"PORT", "5432"),
-		User:        env.GetEnv(p + "USER"),
-		Password:    env.GetEnv(p + "PASSWORD"),
-		Name:        env.GetEnv(p + "NAME"),
-		SSLMode:     env.GetEnvWithDefault(p+"SSLMODE", "require"),
-		MaxPoolSize: env.GetEnvAsIntWithDefault(p+"MAX_POOL_SIZE", 2),
-		MaxLifeTime: env.GetEnvAsDurationWithDefault(p+"MAX_LIFE_TIME", 5*time.Minute),
+		Host:         env.GetEnv(p + "HOST"),
+		Port:         env.GetEnvWithDefault(p+"PORT", "5432"),
+		User:         env.GetEnv(p + "USER"),
+		Password:     env.GetEnv(p + "PASSWORD"),
+		Name:         env.GetEnv(p + "NAME"),
+		SSLMode:      env.GetEnvWithDefault(p+"SSLMODE", "require"),
+		MaxPoolSize:  env.GetEnvAsIntWithDefault(p+"MAX_POOL_SIZE", 10),
+		MaxIdleConns: env.GetEnvAsIntWithDefault(p+"MAX_IDLE_CONNS", 5),
+		MaxLifeTime:  env.GetEnvAsDurationWithDefault(p+"MAX_LIFE_TIME", 5*time.Minute),
 	}
 
 	var missing []string

@@ -3,7 +3,7 @@ package postgresql
 import (
 	"context"
 
-	"github.com/juanMaAV92/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/v2/logger"
 	"gorm.io/gorm"
 )
 

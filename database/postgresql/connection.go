@@ -10,7 +10,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/juanMaAV92/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/v2/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
@@ -73,8 +73,19 @@ func connect(cfg Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sql.DB: %w", err)
 	}
-	sqlDB.SetMaxIdleConns(cfg.MaxPoolSize)
-	sqlDB.SetMaxOpenConns(cfg.MaxPoolSize)
+	maxOpen := cfg.MaxPoolSize
+	if maxOpen <= 0 {
+		maxOpen = 10
+	}
+	maxIdle := cfg.MaxIdleConns
+	if maxIdle <= 0 {
+		maxIdle = 5
+	}
+	if maxIdle > maxOpen {
+		maxIdle = maxOpen
+	}
+	sqlDB.SetMaxOpenConns(maxOpen)
+	sqlDB.SetMaxIdleConns(maxIdle)
 	sqlDB.SetConnMaxLifetime(cfg.MaxLifeTime)
 
 	if err := instance.Use(tracing.NewPlugin()); err != nil {

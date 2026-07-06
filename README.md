@@ -7,11 +7,33 @@
 
 Go utility library for building microservices on AWS. Single module, consistent patterns across all packages: `ConfigFromEnv`, interface-driven design, OTel tracing.
 
+📖 **[Interactive docs & module guide](https://juanmaav92.github.io/go-utils)** · real-world usage: **[go-echo-blueprint](https://github.com/juanMaAV92/go-echo-blueprint)**
+
 ```bash
-go get github.com/juanMaAV92/go-utils
+go get github.com/juanMaAV92/go-utils/v2
 ```
 
-Requires Go 1.21+.
+```go
+import "github.com/juanMaAV92/go-utils/v2/logger"
+```
+
+Requires Go 1.25+.
+
+---
+
+## v2.0.0
+
+Module path is now `/v2` (Go semantic import versioning). Update imports to `github.com/juanMaAV92/go-utils/v2/...`. Highlights of this release:
+
+- **logger** — OTel `trace_id`/`span_id` are now actually injected into every log line (previously silently dropped by a handler-wrapping bug).
+- **telemetry** — fractional sampling is `ParentBased`, so upstream sampling decisions are honored across services.
+- **security/jwt** — validation now enforces RS256 only, requires `exp`, and validates the issuer.
+- **httpclient** — request/response bodies are no longer logged (they leaked credentials and tokens).
+- **cache/redis** — `WithKeepTTL` works (was a guaranteed syntax error); `AddToSet` rejects unsupported options.
+- **messaging/scheduler** — `UpdateSchedule` no longer re-enables paused schedules; timezone is applied correctly; the non-functional `Tags` field was removed in favor of a `Disabled` flag.
+- **messaging/sqs/consumer** — poll backoff on errors, graceful drain on shutdown (no duplicate delivery), `MaxMessages`/`WaitTimeSeconds` clamped to AWS limits.
+- **database/postgresql** — errors wrap their cause (`errors.Is`-able); separate `MaxIdleConns`; higher default pool size.
+- **middleware/identity** — scoped permission forwarding no longer leaks `all:all`.
 
 ---
 

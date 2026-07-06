@@ -32,15 +32,19 @@ func (c *cache) Set(ctx context.Context, key string, value any, opts ...SetOptio
 		return err
 	}
 
-	args := goredis.SetArgs{TTL: o.TTL}
+	args := goredis.SetArgs{}
 	switch {
 	case o.IfNotExist:
 		args.Mode = "NX"
 	case o.IfExist:
 		args.Mode = "XX"
 	}
+	// KeepTTL and TTL are mutually exclusive in Redis (SET ... KEEPTTL EX n is a
+	// syntax error). KeepTTL wins; otherwise send the (possibly default) TTL.
 	if o.KeepTTL {
 		args.KeepTTL = true
+	} else {
+		args.TTL = o.TTL
 	}
 
 	if err := c.instance.SetArgs(ctx, c.key(key), payload, args).Err(); err != nil {
@@ -99,6 +103,12 @@ func (c *cache) GetOrSet(ctx context.Context, key string, dest any, fn func() (a
 	}
 
 	if setErr := c.Set(ctx, key, value, opts...); setErr != nil {
+		// With WithNX, losing the fill race returns ErrKeyNotSet — but the key
+		// now holds another goroutine's value, so read and return that instead
+		// of surfacing a spurious failure.
+		if errors.Is(setErr, ErrKeyNotSet) {
+			return c.Get(ctx, key, dest)
+		}
 		return setErr
 	}
 
@@ -189,6 +199,12 @@ func (c *cache) AddToSet(ctx context.Context, key string, members []string, opts
 	o := &setOptions{TTL: 0}
 	for _, opt := range opts {
 		opt(o)
+	}
+	// SADD has no NX/XX/KEEPTTL semantics; only TTL is meaningful here. Reject the
+	// others instead of silently ignoring them (the shared SetOption type would
+	// otherwise advertise capabilities this method does not honor).
+	if o.IfNotExist || o.IfExist || o.KeepTTL {
+		return errors.New("redis: AddToSet only supports WithTTL/WithPersist")
 	}
 
 	if o.TTL <= 0 {

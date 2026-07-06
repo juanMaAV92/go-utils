@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/juanMaAV92/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/v2/logger"
 	"gorm.io/gorm"
 )
 
@@ -291,5 +291,8 @@ func handleDBError(ctx context.Context, log logger.Logger, err error, step, mess
 		}
 	}
 
-	return errors.New(message)
+	// Wrap (not replace) the original error so callers can still errors.Is /
+	// errors.As the real cause — e.g. serialization failures (40001), deadlocks,
+	// context.DeadlineExceeded — which is essential for retry-on-conflict logic.
+	return fmt.Errorf("%s: %w", message, err)
 }

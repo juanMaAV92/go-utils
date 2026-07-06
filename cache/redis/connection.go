@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/juanMaAV92/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/v2/logger"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	goredis "github.com/redis/go-redis/v9"
 )

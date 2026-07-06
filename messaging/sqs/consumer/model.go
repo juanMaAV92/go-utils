@@ -3,17 +3,20 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/juanMaAV92/go-utils/env"
+	"github.com/juanMaAV92/go-utils/v2/env"
 )
 
 // ConsumerConfig holds consumer-specific configuration.
 type ConsumerConfig struct {
 	QueueURL          string
-	MaxMessages       int32 // 1–10, default 10
-	WaitTimeSeconds   int32 // 0–20 (long polling), default 20
-	VisibilityTimeout int32 // seconds, default 30
-	WorkerPoolSize    int   // concurrent workers, default 10
+	MaxMessages       int32         // 1–10, clamped; default 10
+	WaitTimeSeconds   int32         // 0–20 (long polling), clamped; default 20
+	VisibilityTimeout int32         // seconds, default 30
+	WorkerPoolSize    int           // concurrent workers, default 10
+	PollErrorBackoff  time.Duration // wait after a failed ReceiveMessage before retrying; default 1s
+	ShutdownTimeout   time.Duration // max time to drain in-flight messages on shutdown; default 30s
 }
 
 // ConfigFromEnv reads consumer configuration from environment variables.
@@ -30,6 +33,8 @@ func ConfigFromEnv(prefix string) (ConsumerConfig, error) {
 		WaitTimeSeconds:   int32(env.GetEnvAsIntWithDefault(p+"WAIT_TIME_SECONDS", 20)),
 		VisibilityTimeout: int32(env.GetEnvAsIntWithDefault(p+"VISIBILITY_TIMEOUT", 30)),
 		WorkerPoolSize:    env.GetEnvAsIntWithDefault(p+"WORKER_POOL_SIZE", 10),
+		PollErrorBackoff:  env.GetEnvAsDurationWithDefault(p+"POLL_ERROR_BACKOFF", time.Second),
+		ShutdownTimeout:   env.GetEnvAsDurationWithDefault(p+"SHUTDOWN_TIMEOUT", 30*time.Second),
 	}
 	if cfg.QueueURL == "" {
 		return ConsumerConfig{}, fmt.Errorf("sqs/consumer: missing required env var: %s", p+"QUEUE_URL")

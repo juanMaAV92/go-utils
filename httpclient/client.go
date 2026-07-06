@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/juanMaAV92/go-utils/logger"
+	"github.com/juanMaAV92/go-utils/v2/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
@@ -77,7 +77,7 @@ func New(log logger.Logger, opts ...ClientOption) Client {
 	return &client{
 		resty:             rc,
 		logger:            log,
-		tracer:            otel.Tracer("github.com/juanMaAV92/go-utils/httpclient"),
+		tracer:            otel.Tracer("github.com/juanMaAV92/go-utils/v2/httpclient"),
 		downstreamService: cfg.ServiceName,
 		config:            cfg,
 	}
@@ -154,8 +154,8 @@ func (c *client) executeRequest(ctx context.Context, method, url string, body an
 		c.logRequest(ctx, shouldLog, logParams{
 			method: method, url: url,
 			statusCode: statusCodeOf(resp), duration: duration,
-			body: body, queryParams: reqCfg.QueryParams,
-			success: false, err: err,
+			queryParams: reqCfg.QueryParams,
+			success:     false, err: err,
 		})
 		span.RecordError(err)
 		if resp != nil {
@@ -175,8 +175,8 @@ func (c *client) executeRequest(ctx context.Context, method, url string, body an
 	c.logRequest(ctx, shouldLog, logParams{
 		method: method, url: url,
 		statusCode: resp.StatusCode(), duration: duration,
-		body: body, queryParams: reqCfg.QueryParams,
-		success: resp.IsSuccess(), responseBody: string(resp.Body()),
+		queryParams: reqCfg.QueryParams,
+		success:     resp.IsSuccess(),
 	})
 
 	if !resp.IsSuccess() {
@@ -218,20 +218,21 @@ func dispatch(req *resty.Request, method, url string) (*resty.Response, error) {
 
 // logParams groups fields for the log call to avoid a long argument list.
 type logParams struct {
-	method, url  string
-	statusCode   int
-	duration     time.Duration
-	body         any
-	queryParams  map[string]string
-	responseBody string
-	success      bool
-	err          error
+	method, url string
+	statusCode  int
+	duration    time.Duration
+	queryParams map[string]string
+	success     bool
+	err         error
 }
 
 func (c *client) logRequest(ctx context.Context, enabled bool, p logParams) {
 	if !enabled || c.logger == nil {
 		return
 	}
+	// Request/response bodies are deliberately NOT logged: they routinely carry
+	// credentials (login payloads) and bearer/refresh tokens. Only request
+	// metadata is logged; inspect payloads via tracing when needed.
 	fields := []any{
 		"method", p.method,
 		"url", p.url,
@@ -239,9 +240,6 @@ func (c *client) logRequest(ctx context.Context, enabled bool, p logParams) {
 		"status_code", p.statusCode,
 		"response_time", p.duration.String(),
 		"success", p.success,
-	}
-	if p.body != nil {
-		fields = append(fields, "request_body", p.body)
 	}
 	if len(p.queryParams) > 0 {
 		fields = append(fields, "query_params", p.queryParams)
@@ -251,17 +249,14 @@ func (c *client) logRequest(ctx context.Context, enabled bool, p logParams) {
 		c.logger.Error(ctx, "httpclient.request", "request failed", fields...)
 		return
 	}
-	if p.responseBody != "" {
-		fields = append(fields, "response_body", p.responseBody)
-	}
 	c.logger.Info(ctx, "httpclient.request", "request completed", fields...)
 }
 
 // restyCarrier adapts resty.Request to propagation.TextMapCarrier.
 type restyCarrier struct{ r *resty.Request }
 
-func (c restyCarrier) Get(key string) string        { return c.r.Header.Get(key) }
-func (c restyCarrier) Set(key, value string)        { c.r.SetHeader(key, value) }
+func (c restyCarrier) Get(key string) string { return c.r.Header.Get(key) }
+func (c restyCarrier) Set(key, value string) { c.r.SetHeader(key, value) }
 func (c restyCarrier) Keys() []string {
 	keys := make([]string, 0, len(c.r.Header))
 	for k := range c.r.Header {

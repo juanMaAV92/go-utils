@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/juanMaAV92/go-utils/errors"
+	"github.com/juanMaAV92/go-utils/v2/errors"
 	"github.com/labstack/echo/v4"
 )
 

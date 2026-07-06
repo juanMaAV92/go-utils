@@ -3,7 +3,7 @@
 Structured logging via `log/slog` (stdlib). Key behaviors:
 - Fields are **flat** at the JSON root — queryable directly in Grafana/Loki/Datadog without path notation
 - `trace_id` and `span_id` injected automatically from the OTel context when a span is active
-- `"local"` environment → colored console output; anything else → JSON to stdout
+- `"local"` environment → plain-text console output (`key=value`); anything else → JSON to stdout
 - `Fatal` calls `os.Exit(1)` after logging — do not use inside request handlers
 
 ## Interface

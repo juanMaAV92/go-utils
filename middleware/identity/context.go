@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/juanMaAV92/go-utils/httpclient"
+	"github.com/juanMaAV92/go-utils/v2/httpclient"
 )
 
 type contextIdentityKey struct{}
@@ -127,22 +127,12 @@ func FilterPermissions(ctx context.Context, patterns ...string) []string {
 		return nil
 	}
 
+	// Scoping is deliberate: when the caller narrows with patterns, forward ONLY
+	// permissions that match — superadmin ("all:all") is NOT auto-injected, or it
+	// would defeat the blast-radius reduction the patterns are asking for. To
+	// forward everything (including superadmin), call without patterns.
 	var filtered []string
-	hasSuperAdmin := false
-	for _, p := range userPerms {
-		if p == superAdminPermission {
-			hasSuperAdmin = true
-			break
-		}
-	}
-	if hasSuperAdmin {
-		filtered = append(filtered, superAdminPermission)
-	}
-
 	for _, perm := range userPerms {
-		if perm == superAdminPermission {
-			continue
-		}
 		for _, pattern := range patterns {
 			if matchPattern(perm, pattern) {
 				filtered = append(filtered, perm)

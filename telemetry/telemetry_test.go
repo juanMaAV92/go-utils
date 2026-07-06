@@ -23,7 +23,8 @@ func TestResolveSampler_Full(t *testing.T) {
 
 func TestResolveSampler_Partial(t *testing.T) {
 	s := resolveSampler(0.5)
-	want := sdktrace.TraceIDRatioBased(0.5)
+	// ParentBased so an upstream sampling decision is honored across services.
+	want := sdktrace.ParentBased(sdktrace.TraceIDRatioBased(0.5))
 	if s.Description() != want.Description() {
 		t.Errorf("rate=0.5 sampler = %q, want %q", s.Description(), want.Description())
 	}

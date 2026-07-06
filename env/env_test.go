@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/juanMaAV92/go-utils/env"
+	"github.com/juanMaAV92/go-utils/v2/env"
 )
 
 func TestGetEnv(t *testing.T) {

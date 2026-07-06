@@ -64,22 +64,27 @@ errors.ValidationErrorCode       // "VALIDATION_ERROR"
 ## Usage
 
 ```go
-import "github.com/juanMaAV92/go-utils/errors"
+import (
+    stderrors "errors"
+
+    apperrors "github.com/juanMaAV92/go-utils/v2/errors"
+)
 
 // Return predefined
-return errors.ErrNotFound()
-return errors.ErrUnauthorized("token expired")
+return apperrors.ErrNotFound()
+return apperrors.ErrUnauthorized("token expired")
 
 // Custom message on predefined
-return errors.ErrBadRequest().WithMessage("email is required")
-return errors.ErrBadRequest().WithMessages([]string{"email required", "name required"})
+return apperrors.ErrBadRequest().WithMessage("email is required")
+return apperrors.ErrBadRequest().WithMessages([]string{"email required", "name required"})
 
 // Fully custom
-return errors.New(http.StatusConflict, "CONFLICT", []string{"resource already exists"})
+return apperrors.New(http.StatusConflict, "CONFLICT", []string{"resource already exists"})
 
-// Type-check in middleware
-var appErr *errors.ErrorResponse
-if errors.As(err, &appErr) {
+// Type-check in middleware — use the stdlib errors.As (this package does not
+// re-export As/Is), aliasing this package to avoid the name clash.
+var appErr *apperrors.ErrorResponse
+if stderrors.As(err, &appErr) {
     // appErr.ErrorHTTPCode(), appErr.ErrorCode()
 }
 ```

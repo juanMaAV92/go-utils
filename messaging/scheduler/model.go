@@ -21,6 +21,10 @@ type Scheduler interface {
 }
 
 // ScheduleConfig holds the parameters for creating or updating a schedule.
+//
+// UpdateSchedule uses full-replace (PUT) semantics: every field here is the
+// desired end state, so Disabled must be set on every update to keep a paused
+// schedule paused.
 type ScheduleConfig struct {
 	Name                      string
 	Description               string
@@ -29,7 +33,7 @@ type ScheduleConfig struct {
 	Timezone                  string // IANA timezone, default: "UTC"
 	FlexibleTimeWindowMinutes int    // 0 = exact time, >0 = flexible window in minutes
 	Target                    ScheduleTarget
-	Tags                      map[string]string
+	Disabled                  bool // false = ENABLED (default), true = DISABLED
 }
 
 // NewWebhookSchedule is a convenience constructor for scheduling an HTTP webhook

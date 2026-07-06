@@ -51,6 +51,9 @@ claims, err := jwt.ValidateToken[MyClaims, *MyClaims](svc, tokenString)
 
 ### 5. Validate ignoring expiration (refresh flows)
 
+Skips the time-based claims (`exp`/`nbf`/`iat`) but still enforces the signature,
+the RS256 algorithm, and the issuer.
+
 ```go
 claims, err := jwt.ValidateTokenIgnoringExpiration[MyClaims, *MyClaims](svc, tokenString)
 ```
@@ -74,7 +77,9 @@ func ValidateTokenIgnoringExpiration[T any, C interface{ *T; jwt.Claims }](
 
 ## Security
 
-- Algorithm is verified on every validation (`RS256` only). Tokens signed with other algorithms are rejected — prevents algorithm substitution attacks.
+- Algorithm is restricted to `RS256` on every validation (via `WithValidMethods`). Tokens signed with any other algorithm — including RS384/RS512 or HMAC — are rejected, preventing algorithm-substitution attacks.
+- Expiration is required: a token without an `exp` claim is rejected (`ValidateToken`).
+- Issuer is validated against the service's configured issuer when one is set.
 - Keys are parsed at construction time; invalid PEM fails fast at startup.
 
 ## Dependencies

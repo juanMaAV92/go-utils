@@ -82,10 +82,12 @@ Bind failure:
 | `email` | `{field} must be a valid email` |
 | `url` | `{field} must be a valid URL` |
 | `uuid` | `{field} must be a valid UUID` |
-| `min` | `{field} must be at least {n} characters` |
-| `max` | `{field} must be at most {n} characters` |
-| `len` | `{field} must be exactly {n} characters` |
+| `min` | `{field} must be at least {n}` + unit¹ |
+| `max` | `{field} must be at most {n}` + unit¹ |
+| `len` | `{field} must be exactly {n}` + unit¹ |
 | `gt` / `gte` / `lt` / `lte` | numeric range messages |
+
+¹ Unit depends on the field kind: ` characters` for strings, ` items` for slices/maps/arrays, and nothing for numbers (e.g. `amount must be at least 10`).
 | `oneof` | `{field} must be one of: {values}` |
 | `numeric` / `alpha` / `alphanum` | format messages |
 | `datetime` | `{field} must be a valid datetime` |

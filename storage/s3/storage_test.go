@@ -49,8 +49,8 @@ func (m *mockPresigner) PresignGetObject(ctx context.Context, params *awss3.GetO
 	return m.presignGetFn(ctx, params, optFns...)
 }
 
-func strPtr(s string) *string { return &s }
-func i64Ptr(i int64) *int64   { return &i }
+func strPtr(s string) *string        { return &s }
+func i64Ptr(i int64) *int64          { return &i }
 func timePtr(t time.Time) *time.Time { return &t }
 
 func newTestStorage(client s3API, presigner presignAPI) Storage {
