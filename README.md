@@ -1,13 +1,17 @@
 # go-utils
 
 [![CI](https://github.com/juanMaAV92/go-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/juanMaAV92/go-utils/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/juanMaAV92/go-utils?color=6ee7a8&label=release)](https://github.com/juanMaAV92/go-utils/releases)
 [![Go Reference](https://pkg.go.dev/badge/github.com/juanMaAV92/go-utils.svg)](https://pkg.go.dev/github.com/juanMaAV92/go-utils)
-[![Go Report Card](https://goreportcard.com/badge/github.com/juanMaAV92/go-utils)](https://goreportcard.com/report/github.com/juanMaAV92/go-utils)
+![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-juanmaav92.github.io-6ee7a8)](https://juanmaav92.github.io/go-utils)
 
-Go utility library for building microservices on AWS. Single module, consistent patterns across all packages: `ConfigFromEnv`, interface-driven design, OTel tracing.
+Librería de utilidades en Go para construir microservicios en AWS. Módulo único, patrones consistentes en todos los paquetes: `ConfigFromEnv`, diseño guiado por interfaces y trazabilidad distribuida con OpenTelemetry.
 
-📖 **[Interactive docs & module guide](https://juanmaav92.github.io/go-utils)** · real-world usage: **[go-echo-blueprint](https://github.com/juanMaAV92/go-echo-blueprint)**
+> Documentación interactiva: **https://juanmaav92.github.io/go-utils**
+>
+> Ejemplo real: [go-echo-blueprint](https://github.com/juanMaAV92/go-echo-blueprint) — template de microservicio Echo con arquitectura por capas que integra base de datos (PostgreSQL), caché (Redis), mensajería (SQS/SNS), tracing distribuido, validación y middleware de identidad.
 
 ```bash
 go get github.com/juanMaAV92/go-utils/v2
@@ -17,75 +21,77 @@ go get github.com/juanMaAV92/go-utils/v2
 import "github.com/juanMaAV92/go-utils/v2/logger"
 ```
 
-Requires Go 1.25+.
+Requiere Go 1.25+.
 
 ---
 
 ## v2.0.0
 
-Module path is now `/v2` (Go semantic import versioning). Update imports to `github.com/juanMaAV92/go-utils/v2/...`. Highlights of this release:
+El path del módulo ahora incluye el sufijo `/v2` (versionado semántico de importaciones en Go). Actualiza tus imports a `github.com/juanMaAV92/go-utils/v2/...`. Lo más destacado de esta versión:
 
-- **logger** — OTel `trace_id`/`span_id` are now actually injected into every log line (previously silently dropped by a handler-wrapping bug).
-- **telemetry** — fractional sampling is `ParentBased`, so upstream sampling decisions are honored across services.
-- **security/jwt** — validation now enforces RS256 only, requires `exp`, and validates the issuer.
-- **httpclient** — request/response bodies are no longer logged (they leaked credentials and tokens).
-- **cache/redis** — `WithKeepTTL` works (was a guaranteed syntax error); `AddToSet` rejects unsupported options.
-- **messaging/scheduler** — `UpdateSchedule` no longer re-enables paused schedules; timezone is applied correctly; the non-functional `Tags` field was removed in favor of a `Disabled` flag.
-- **messaging/sqs/consumer** — poll backoff on errors, graceful drain on shutdown (no duplicate delivery), `MaxMessages`/`WaitTimeSeconds` clamped to AWS limits.
-- **database/postgresql** — errors wrap their cause (`errors.Is`-able); separate `MaxIdleConns`; higher default pool size.
-- **middleware/identity** — scoped permission forwarding no longer leaks `all:all`.
+- **logger** — los IDs de OTel `trace_id`/`span_id` ahora se inyectan correctamente en cada línea de log (se corregió un bug donde se omitían silenciosamente debido a la envoltura del handler).
+- **telemetry** — el muestreo fraccional es `ParentBased`, por lo que se respetan las decisiones de muestreo tomadas aguas arriba (upstream) entre servicios.
+- **security/jwt** — la validación ahora obliga a usar exclusivamente RS256, exige la presencia de `exp` y valida el emisor (`iss`).
+- **httpclient** — se deshabilitó el logueo de los cuerpos de request/response para evitar la fuga accidental de credenciales y tokens.
+- **cache/redis** — `WithKeepTTL` funciona correctamente (antes causaba un error de sintaxis garantizado); `AddToSet` ahora rechaza las opciones no soportadas.
+- **messaging/scheduler** — `UpdateSchedule` ya no vuelve a habilitar schedules que estaban pausados; la zona horaria se aplica de forma correcta y se eliminó el campo no funcional `Tags` a favor de un flag `Disabled`.
+- **messaging/sqs/consumer** — se implementó backoff de sondeo (poll) ante errores, un vaciado gradual (graceful drain) al apagar (evitando entregas duplicadas) y límites de AWS aplicados a `MaxMessages`/`WaitTimeSeconds`.
+- **database/postgresql** — los errores ahora envuelven su causa original (permitiendo usar `errors.Is`); se añadió configuración independiente para `MaxIdleConns` y se aumentó el tamaño por defecto del pool de conexiones.
+- **middleware/identity** — la propagación de permisos con scope específico ya no filtra el comodín general `all:all`.
 
 ---
 
-## Packages
+## Paquetes
 
 ### Core
 
-| Package | Description |
+| Paquete | Descripción |
 |---|---|
-| [`env`](env/) | Environment variable parsing with type conversion and safe defaults |
-| [`errors`](errors/) | Structured HTTP error responses; `errors/echo` for Echo error handler |
-| [`logger`](logger/) | `log/slog`-based structured logger with OTel trace/span injection |
-| [`telemetry`](telemetry/) | OpenTelemetry SDK initialisation (OTLP exporter, sampler, resource) |
-| [`validator`](validator/) | `go-playground/validator` wrapper returning structured error responses |
-| [`pointers`](pointers/) | Generic pointer helpers (`Pointer[T]`, `Value[T]`, `FirstNonNil`) |
-| [`timeutil`](timeutil/) | Time formatting and pointer conversion utilities |
-| [`httpclient`](httpclient/) | HTTP client (Resty) with OTel trace propagation and retry |
-| [`security/jwt`](security/jwt/) | RS256 JWT generation and validation with generic claims |
+| [`env`](env/) | Parseo de variables de entorno con conversión de tipos y valores seguros por defecto |
+| [`errors`](errors/) | Respuestas estructuradas de error HTTP; `errors/echo` para el handler de errores de Echo |
+| [`logger`](logger/) | Logger estructurado basado en `log/slog` con inyección automática de trazas/spans de OTel |
+| [`telemetry`](telemetry/) | Inicialización del SDK de OpenTelemetry (exportador OTLP, sampler y recurso base) |
+| [`validator`](validator/) | Wrapper de `go-playground/validator` que retorna respuestas estructuradas de error |
+| [`pointers`](pointers/) | Helpers genéricos para punteros (`Pointer[T]`, `Value[T]`, `FirstNonNil`) |
+| [`timeutil`](timeutil/) | Utilidades para formateo de fechas y conversión a punteros |
+| [`httpclient`](httpclient/) | Cliente HTTP (Resty) con propagación de trazas OTel y políticas de reintento |
+| [`security/jwt`](security/jwt/) | Generación y validación de tokens JWT RS256 con claims genéricos |
 
-### Infrastructure
+### Infraestructura
 
-| Package | Description |
+| Paquete | Descripción |
 |---|---|
-| [`database/postgresql`](database/postgresql/) | GORM wrapper with CRUD, pagination, transactions, and OTel tracing |
-| [`cache/redis`](cache/redis/) | Redis client with TTL, set operations, Pub/Sub, and OTel metrics |
-| [`storage/s3`](storage/s3/) | S3 client: `GetObject`, `PutObject`, `DeleteObject`, `HeadObject`, presigned URLs |
+| [`database/postgresql`](database/postgresql/) | Wrapper de GORM con operaciones CRUD, paginación, transacciones y tracing OTel |
+| [`cache/redis`](cache/redis/) | Cliente Redis con TTL, operaciones de sets, Pub/Sub y métricas OTel |
+| [`storage/s3`](storage/s3/) | Cliente S3: `GetObject`, `PutObject`, `DeleteObject`, `HeadObject` y generación de URLs firmadas |
 
-### Messaging
+### Mensajería
 
-| Package | Description |
+| Paquete | Descripción |
 |---|---|
-| [`messaging/sqs`](messaging/sqs/) | SQS client; `sqs/producer` (send/batch), `sqs/consumer` (worker pool, SNS unwrap) |
-| [`messaging/sns`](messaging/sns/) | SNS producer with W3C Trace Context propagation |
-| [`messaging/scheduler`](messaging/scheduler/) | EventBridge Scheduler: one-time Lambda invocations, flexible windows, retry policy |
+| [`messaging/sqs`](messaging/sqs/) | Cliente SQS: productor (envío simple/batch) y consumidor (worker pool con desempaquetado de SNS) |
+| [`messaging/sns`](messaging/sns/) | Productor SNS con propagación de contexto de trazas W3C en atributos |
+| [`messaging/scheduler`](messaging/scheduler/) | EventBridge Scheduler: ejecuciones únicas de Lambda, ventanas flexibles y política de reintento |
 
-### Middleware & Testing
+### Middleware y Testing
 
-| Package | Description |
+| Paquete | Descripción |
 |---|---|
-| [`middleware/identity`](middleware/identity/) | Echo middleware for user identity propagation via HTTP headers; RBAC helpers |
-| [`testutil/echo`](testutil/echo/) | Table-driven Echo handler test helpers (`PrepareContext`, `ToJSONString`) |
-| [`testutil/http`](testutil/http/) | Framework-agnostic HTTP test helpers (`AssertStatus`, `AssertJSONField`, `DecodeJSON`) |
+| [`middleware/identity`](middleware/identity/) | Middleware para Echo que propaga la identidad del usuario desde headers HTTP; helpers de RBAC |
+| [`testutil/echo`](testutil/echo/) | Helpers para pruebas table-driven de handlers Echo (`PrepareContext`, `ToJSONString`) |
+| [`testutil/http`](testutil/http/) | Helpers de pruebas HTTP agnósticos del framework (`AssertStatus`, `AssertJSONField`, `DecodeJSON`) |
 
 ---
 
-## Design
+## Diseño
 
-- **Observability first** — every package emits OTel spans; logger injects `trace_id`/`span_id`
-- **ConfigFromEnv(prefix)** — consistent across all AWS packages; prefix isolates env vars per client instance
-- **Interface-driven** — exported interface, unexported implementation; internal API interfaces enable mock-based tests without real AWS
-- **No hardcoded credentials** — all AWS packages use the standard credential chain
+- **Observabilidad nativa** — cada paquete emite spans de OpenTelemetry; el logger inyecta `trace_id`/`span_id` automáticamente desde el contexto.
+- **ConfigFromEnv(prefix)** — patrón consistente en todos los paquetes de AWS; el prefijo aísla las variables de entorno por instancia del cliente.
+- **Guiado por interfaces** — expone interfaces con implementaciones no exportadas; las interfaces facilitan mocks en pruebas unitarias sin interactuar con AWS real.
+- **Sin credenciales fijas** — todos los paquetes de AWS usan la cadena de credenciales estándar (variables de entorno, archivo config, IAM roles).
 
-## License
+---
+
+## Licencia
 
 MIT
