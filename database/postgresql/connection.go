@@ -11,10 +11,10 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/juanMaAV92/go-utils/v2/logger"
+	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
-	"gorm.io/plugin/opentelemetry/tracing"
 )
 
 const (
@@ -88,7 +88,7 @@ func connect(cfg Config) (*gorm.DB, error) {
 	sqlDB.SetMaxIdleConns(maxIdle)
 	sqlDB.SetConnMaxLifetime(cfg.MaxLifeTime)
 
-	if err := instance.Use(tracing.NewPlugin()); err != nil {
+	if err := instance.Use(otelgorm.NewPlugin()); err != nil {
 		return nil, fmt.Errorf("failed to enable OTel tracing: %w", err)
 	}
 
